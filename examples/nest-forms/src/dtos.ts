@@ -29,6 +29,12 @@ export class UpdateTerminalDto {
   @IsNumber()
   active?: number;
 
+  // required only for a printing terminal (the condition reads the DTO through a shape of its own)
+  @ValidateIf((o: { printer?: number }) => o.printer === 1)
+  @IsString()
+  @IsNotEmpty()
+  printerModel?: string;
+
   @ValidateIf((o: UpdateTerminalDto) => o.ticket === "S")
   @IsString({ message: (args: ValidationArguments) => `${args.property} is required when ${args.targetName}.ticket is S` })
   note?: string;
