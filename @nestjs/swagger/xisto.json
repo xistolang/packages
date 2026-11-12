@@ -1,7 +1,7 @@
 {
   "name": "@nestjs/swagger",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0 WITH LLVM-exception",
   "implements": { "@nestjs/swagger": "^7" },
   "main": "index.ts",
   "dependencies": { "@nestjs/common": "0.1.0", "@nestjs/core": "0.1.0" }

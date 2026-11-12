@@ -1,7 +1,7 @@
 {
   "name": "@nestjs/typeorm",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0 WITH LLVM-exception",
   "implements": { "@nestjs/typeorm": "^10" },
   "main": "index.ts",
   "dependencies": { "@nestjs/common": "0.1.0", "typeorm": "0.1.0" }

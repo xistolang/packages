@@ -1,7 +1,7 @@
 {
   "name": "reflect-metadata",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0 WITH LLVM-exception",
   "implements": { "reflect-metadata": "^0.2" },
   "main": "index.ts"
 }

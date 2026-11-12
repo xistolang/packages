@@ -1,7 +1,7 @@
 {
   "name": "@nestjs/passport",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0 WITH LLVM-exception",
   "implements": { "@nestjs/passport": "^10 || ^11" },
   "main": "index.ts",
   "dependencies": { "@nestjs/common": "0.1.0", "express": "0.1.0", "passport-jwt": "0.1.0" }

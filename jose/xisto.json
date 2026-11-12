@@ -1,7 +1,7 @@
 {
   "name": "jose",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0 WITH LLVM-exception",
   "implements": { "jose": "^5" },
   "main": "index.ts",
   "native": ["native/rsa.c"],

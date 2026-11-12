@@ -1,7 +1,7 @@
 {
   "name": "@nestjs/platform-express",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0 WITH LLVM-exception",
   "implements": { "@nestjs/platform-express": "^10" },
   "main": "index.ts",
   "dependencies": { "@nestjs/core": "0.1.0" }

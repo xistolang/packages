@@ -1,7 +1,7 @@
 {
   "name": "jwks-rsa",
   "version": "0.1.0",
-  "license": "MIT",
+  "license": "Apache-2.0 WITH LLVM-exception",
   "implements": { "jwks-rsa": "^3 || ^4" },
   "main": "index.ts",
   "native": ["native/jwk.c"],
