@@ -1,9 +1,10 @@
-/* The pg package's C against a live server (tests/pg/run.sh starts one): login, types, parameters, errors. */
+/* The pg package's C against a live server: login, types, parameters, errors. Not run by tests/run.sh: it needs the
+   compiler's runtime headers (cc -I<xisto checkout>/runtime -o driver tests/pg/driver.c). */
 #define XS_THREADS 1
-#include "../../runtime/xisto_rt.h"
-#include "../../runtime/xisto_net.h"
-#include "../../runtime/xisto_crypto.h"
-#include "../../packages/pg/native/pg.c"
+#include "xisto_rt.h"
+#include "xisto_net.h"
+#include "xisto_crypto.h"
+#include "../../pg/native/pg.c"
 static void run(xn_pg_NativePool *p, const char *sql, xs_arr_ref *values) {
     xs_str *r = xn_pg_NativePool_query(p, xs_str_new(sql, strlen(sql)), values);
     printf("%s\n", r->data);

@@ -3,10 +3,9 @@
 # memory sink, checked as a ZIP and as XML (check.py) and, when LibreOffice is installed, opened by it; then the
 # peak memory of 100 000 and 1 000 000 rows, which must be the same (constant memory).
 cd "$(dirname "$0")" || exit 1
-X=$(cd ../.. && pwd)/build/xisto
-OUT=../../build/tests/exceljs
-mkdir -p "$OUT/.xisto/pkgs"
-ln -sfn "$(cd ../../packages/exceljs && pwd)" "$OUT/.xisto/pkgs/exceljs"
+. ../../tests/env.sh
+OUT=$ROOT/build/tests/exceljs
+mkdir -p "$OUT"
 cp report.ts memory.ts "$OUT/"
 XISTO_NODE_COMPAT=1 $X build --no-warnings -o "$OUT/report" "$OUT/report.ts" || exit 1
 XISTO_NODE_COMPAT=1 $X build --no-warnings -o "$OUT/memory" "$OUT/memory.ts" || exit 1

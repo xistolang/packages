@@ -3,12 +3,9 @@
 # interfaces/external/cors-options.interface, and Type<T>. expected.txt is the output of main.ts on Node with
 # rxjs 7, @nestjs/common 10 and reflect-metadata (tsx, experimentalDecorators).
 cd "$(dirname "$0")" || exit 1
-X=$(cd ../.. && pwd)/build/xisto
-P=$(cd ../../packages && pwd)
-OUT=../../build/tests/subpaths
-rm -rf "$OUT" && mkdir -p "$OUT/.xisto/pkgs/@nestjs"
-for p in "$P"/*; do n=$(basename "$p"); case $n in @*|xisto) continue;; esac; ln -s "$p" "$OUT/.xisto/pkgs/$n"; done
-for p in "$P"/@nestjs/*; do ln -s "$p" "$OUT/.xisto/pkgs/@nestjs/$(basename "$p")"; done
+. ../../tests/env.sh
+OUT=$ROOT/build/tests/subpaths
+rm -rf "$OUT" && mkdir -p "$OUT"
 cp main.ts "$OUT/main.ts"
 XISTO_NODE_COMPAT=1 $X build -o "$OUT/main" "$OUT/main.ts" || exit 1
 XISTO_RC_STATS=1 "$OUT/main" > "$OUT/out.txt" 2> "$OUT/stats.txt"

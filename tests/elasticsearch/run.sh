@@ -2,10 +2,9 @@
 # packages/@elastic/elasticsearch against a fake cluster (server.mjs, Node): every call's request and the decoded
 # responses, errors, ignore: [404], a retry, a timeout; no leak. Skipped (not failed) without Node.
 cd "$(dirname "$0")" || exit 1
-X=$(cd ../.. && pwd)/build/xisto
-OUT=../../build/tests/elasticsearch
-mkdir -p "$OUT/.xisto/pkgs/@elastic"
-ln -sfn "$(cd ../../packages/@elastic/elasticsearch && pwd)" "$OUT/.xisto/pkgs/@elastic/elasticsearch"
+. ../../tests/env.sh
+OUT=$ROOT/build/tests/elasticsearch
+mkdir -p "$OUT"
 cp client.ts "$OUT/client.ts"
 if ! command -v node > /dev/null 2>&1; then echo "skip: no node for the fake cluster"; exit 0; fi
 XISTO_NODE_COMPAT=1 XISTO_TSC_CHECKED=1 $X build --no-warnings -o "$OUT/client" "$OUT/client.ts" || exit 1

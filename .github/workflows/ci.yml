@@ -1,0 +1,17 @@
+name: ci
+on:
+  push:
+  pull_request:
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install xisto
+        run: brew install xistolang/tap/xisto
+      - name: Test the packages
+        # no database servers here: the tests that need PostgreSQL, Redis, MongoDB or Oracle print "skip:" lines
+        run: sh tests/run.sh

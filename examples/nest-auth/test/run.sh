@@ -3,11 +3,10 @@
 # source on Node with the real npm packages (@nestjs/passport, passport-jwt, jwks-rsa, @nestjs/throttler, rxjs).
 set -u
 cd "$(dirname "$0")/.." || exit 1
-X=$(cd ../.. && pwd)/build/xisto
+. ../../tests/env.sh
 PORT=${PORT:-3198}
 JPORT=${JPORT:-3199}
 W=$(mktemp -d)
-sh setup.sh
 $X build -o "$W/app" src/main.ts > "$W/build.txt" 2>&1 || { echo "FAIL nest-auth: build"; cat "$W/build.txt"; rm -rf "$W"; exit 1; }
 python3 test/jwks.py "$JPORT" &
 jpid=$!

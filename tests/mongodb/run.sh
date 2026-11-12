@@ -3,10 +3,9 @@
 # 6.10: the bytes of what a program writes, and server documents read back as JSON). The driver against a live
 # server is tested through mongoose (tests/mongoose, XISTO_MONGO_URL).
 cd "$(dirname "$0")" || exit 1
-X=$(cd ../.. && pwd)/build/xisto
-OUT=../../build/tests/mongodb
-mkdir -p "$OUT/.xisto/pkgs"
-ln -sfn "$(cd ../../packages/mongodb && pwd)" "$OUT/.xisto/pkgs/mongodb"
+. ../../tests/env.sh
+OUT=$ROOT/build/tests/mongodb
+mkdir -p "$OUT"
 cp bson.ts "$OUT/bson.ts"
 $X build -o "$OUT/bson" "$OUT/bson.ts" > "$OUT/bson.build.txt" 2>&1 || { echo "FAIL: build bson"; cat "$OUT/bson.build.txt"; exit 1; }
 XISTO_RC_STATS=1 "$OUT/bson" > "$OUT/bson.txt" 2> "$OUT/bson.stats.txt"

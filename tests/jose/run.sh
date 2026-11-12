@@ -4,10 +4,9 @@
 # same bytes; claim checks and errors are jose's. gen.ts generates a key pair and signs with it: OpenSSL checks
 # the key (primes, d, CRT values) and the signature.
 cd "$(dirname "$0")" || exit 1
-X=$(cd ../.. && pwd)/build/xisto
-OUT=../../build/tests/jose
-mkdir -p "$OUT/.xisto/pkgs"
-ln -sfn "$(cd ../../packages/jose && pwd)" "$OUT/.xisto/pkgs/jose"
+. ../../tests/env.sh
+OUT=$ROOT/build/tests/jose
+mkdir -p "$OUT"
 cp main.ts gen.ts "$OUT/"
 XISTO_NODE_COMPAT=1 $X build -o "$OUT/main" "$OUT/main.ts" > "$OUT/build.txt" 2>&1 || { cat "$OUT/build.txt"; exit 1; }
 XISTO_RC_STATS=1 "$OUT/main" . > "$OUT/out.txt" 2> "$OUT/stats.txt"

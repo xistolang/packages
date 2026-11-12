@@ -7,12 +7,9 @@
 # false, Nest's retries). di-order.ts: a forFeature model asked for before its provider ran (a @Global module's
 # alias needed by a module imported first) is still the Model<X>. No leaks in any of them.
 cd "$(dirname "$0")" || exit 1
-X=$(cd ../.. && pwd)/build/xisto
-OUT=../../build/tests/mongoose
-mkdir -p "$OUT/.xisto/pkgs/@nestjs"
-P=$(cd ../../packages && pwd)
-for p in "$P"/*; do case $(basename "$p") in @*|xisto) ;; *) ln -sfn "$p" "$OUT/.xisto/pkgs/$(basename "$p")";; esac; done
-for p in "$P"/@nestjs/*; do ln -sfn "$p" "$OUT/.xisto/pkgs/@nestjs/$(basename "$p")"; done
+. ../../tests/env.sh
+OUT=$ROOT/build/tests/mongoose
+mkdir -p "$OUT"
 cp main.ts feature.ts offline.ts di-order.ts schemas.ts "$OUT/"
 for t in main feature offline di-order; do
   $X build -o "$OUT/$t" "$OUT/$t.ts" > "$OUT/$t.build.txt" 2>&1 || { echo "FAIL: build $t"; cat "$OUT/$t.build.txt"; exit 1; }
@@ -26,7 +23,8 @@ echo "ok: mongoose (schemas, ObjectId, Nest injection as on Node; no server: sel
 # xisto_nest_test): live.ts (the operations, what they write read back raw) and nest-live.ts (a Nest app's Mongo
 # wiring) against expected-live.txt / expected-nest-live.txt, the same sources on Node with mongoose 8.24.8,
 # @nestjs/mongoose 11.0.4 and Nest 11 against the same server
-if [ -z "$XISTO_MONGO_URL" ]; then echo "skip: XISTO_MONGO_URL is not set (mongodb://127.0.0.1:27017)"; exit 0; fi
+if [ -z "$XISTO_MONGO_URL" ]; then echo "skip: mongoose live (XISTO_MONGO_URL is not set: mongodb://127.0.0.1:27017)"; exit 0; fi
+if ! up "$(url_host "$XISTO_MONGO_URL")" "$(url_port "$XISTO_MONGO_URL" 27017)"; then echo "skip: mongoose live (no MongoDB at XISTO_MONGO_URL)"; exit 0; fi
 cp live.ts nest-live.ts live-schemas.ts "$OUT/"
 for t in live nest-live; do
   $X build -o "$OUT/$t" "$OUT/$t.ts" > "$OUT/$t.build.txt" 2>&1 || { echo "FAIL: build $t"; cat "$OUT/$t.build.txt"; exit 1; }

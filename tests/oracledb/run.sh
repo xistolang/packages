@@ -6,26 +6,24 @@
 # Without the variable the test is skipped, not failed. expected.txt is what node-oracledb 6 thin prints for the
 # same operations; the client runs in America/Sao_Paulo since DATE and TIMESTAMP are read in the local time zone.
 cd "$(dirname "$0")" || exit 1
+. ../../tests/env.sh
 # without a database: the login ciphers against known answers
-mkdir -p ../../build/tests/oracledb
-if ! cc -O1 -w -o ../../build/tests/oracledb/crypto-kat crypto-kat.c || ! ../../build/tests/oracledb/crypto-kat; then echo "FAIL: login ciphers"; exit 1; fi
+mkdir -p "$ROOT/build/tests/oracledb"
+if ! cc -O1 -w -o "$ROOT/build/tests/oracledb"/crypto-kat crypto-kat.c || ! "$ROOT/build/tests/oracledb"/crypto-kat; then echo "FAIL: login ciphers"; exit 1; fi
 echo "ok: login ciphers (DES, AES-128/192/256, MD5, 10g verifier) match the known answers"
 # without a database: a pool that cannot connect (closed port), more requests than poolMax at once
-X0=$(cd ../.. && pwd)/build/xisto
-OUT0=../../build/tests/oracledb
-mkdir -p "$OUT0/.xisto/pkgs"
-ln -sfn "$(cd ../../packages/oracledb && pwd)" "$OUT0/.xisto/pkgs/oracledb"
+OUT0="$ROOT/build/tests/oracledb"
+mkdir -p "$OUT0"
 cp pool-refused.ts "$OUT0/pool-refused.ts"
-XISTO_NODE_COMPAT=1 $X0 build --no-warnings -o "$OUT0/pool-refused" "$OUT0/pool-refused.ts" || exit 1
+XISTO_NODE_COMPAT=1 $X build --no-warnings -o "$OUT0/pool-refused" "$OUT0/pool-refused.ts" || exit 1
 if ! perl -e 'alarm 30; exec @ARGV' "$OUT0/pool-refused" > "$OUT0/pool-refused.txt" 2>&1 || ! cmp -s expected-pool-refused.txt "$OUT0/pool-refused.txt"; then
     echo "FAIL: pool with a closed port"; diff expected-pool-refused.txt "$OUT0/pool-refused.txt"; exit 1
 fi
 echo "ok: pool with a closed port (no request waits forever)"
-if [ -z "$XISTO_ORACLE_URL" ]; then echo "skip: XISTO_ORACLE_URL is not set (oracle://user:password@127.0.0.1:1521/FREEPDB1)"; exit 0; fi
-X=$(cd ../.. && pwd)/build/xisto
-OUT=../../build/tests/oracledb
-mkdir -p "$OUT/.xisto/pkgs"
-ln -sfn "$(cd ../../packages/oracledb && pwd)" "$OUT/.xisto/pkgs/oracledb"
+if [ -z "$XISTO_ORACLE_URL" ]; then echo "skip: oracledb live (XISTO_ORACLE_URL is not set: oracle://user:password@127.0.0.1:1521/FREEPDB1)"; exit 0; fi
+if ! up "$(url_host "$XISTO_ORACLE_URL")" "$(url_port "$XISTO_ORACLE_URL" 1521)"; then echo "skip: oracledb live (no Oracle Database at the server of XISTO_ORACLE_URL)"; exit 0; fi
+OUT="$ROOT/build/tests/oracledb"
+mkdir -p "$OUT"
 cp client.ts "$OUT/client.ts"
 XISTO_NODE_COMPAT=1 $X build -o "$OUT/client" "$OUT/client.ts" || exit 1
 for mode in fast classic; do

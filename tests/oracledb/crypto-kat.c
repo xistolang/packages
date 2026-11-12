@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "../../packages/oracledb/native/ora_crypto.c"
+#include "../../oracledb/native/ora_crypto.c"
 static int bad;
 static void check(const char *what, const uint8_t *p, int n, const char *want) {
     char got[65];
