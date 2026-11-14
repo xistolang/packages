@@ -19,6 +19,8 @@ xisto build --pkgs ~/src/packages -o app src/main.ts   # or straight from a chec
 
 | Package | Implements (npm) |
 | --- | --- |
+| `@dynatrace/oneagent` | `@dynatrace/oneagent` ^1 (starts tracing; traces to Dynatrace's OTLP ingest) |
+| `@dynatrace/oneagent-sdk` | `@dynatrace/oneagent-sdk` ^1 (the SDK's tracers) |
 | `@elastic/ecs-pino-format` | `@elastic/ecs-pino-format` ^1 |
 | `@elastic/elasticsearch` | `@elastic/elasticsearch` ^8 |
 | `@nestjs/common` | `@nestjs/common` ^10 |
