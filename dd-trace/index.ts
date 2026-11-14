@@ -160,9 +160,19 @@ export class AgentExporter implements ApmExporter {
     const b = newId();
     this.rid = `${a.slice(0, 8)}-${a.slice(8, 12)}-4${a.slice(13, 16)}-a${b.slice(1, 4)}-${b.slice(4, 16)}`; // (a v4 uuid)
   }
+  /** The service a span is shown under: dd-trace 5's (schema v0) integrations of databases and caches have one of
+   * their own, the program's service with the system's name ("shop-postgres"). */
+  serviceOf(s: ApmSpan): string {
+    const info = Apm.info;
+    if (s.service !== info.service) return s.service;
+    const suffix = s.component === "pg" ? "-postgres" : s.component === "oracledb" ? "-oracle" : s.component === "mongodb" ? "-mongodb"
+      : s.component === "redis" || s.component === "ioredis" ? "-redis" : s.component === "elasticsearch" ? "-elasticsearch" : "";
+    return s.service + suffix;
+  }
   /** The JSON of one span, with the tags dd-trace adds. */
   span(s: ApmSpan, first: boolean): string {
     const info = Apm.info;
+    const service = this.serviceOf(s);
     const meta = new Map<string, string>();
     const metrics = new Map<string, number>();
     if (s.component.length === 0) meta.set("_dd.integration", "opentracing");
@@ -171,11 +181,16 @@ export class AgentExporter implements ApmExporter {
       meta.set("component", s.component);
     }
     if (info.env.length > 0) meta.set("env", info.env);
-    if (info.version.length > 0 && s.service === info.service) meta.set("version", info.version);
+    if (info.version.length > 0) meta.set("version", info.version);
     meta.set("language", "javascript");
     meta.set("runtime-id", this.rid);
     meta.set("service", s.service);
+    if (service !== s.service) { /* (an integration's own service: dd-trace says where it comes from) */
+      meta.set("_dd.base_service", s.service);
+      meta.set("_dd.svc_src", service.slice(s.service.length + 1));
+    }
     for (const k of info.tags.keys()) meta.set(k, info.tags.get(k) ?? "");
+    if (s.kind !== "internal") meta.set("span.kind", s.kind); // (dd-trace tags every span but internal ones)
     for (const k of s.tags.keys()) meta.set(k, s.tags.get(k) ?? "");
     if (s.error) {
       meta.set("error.message", s.errorMessage);
@@ -185,10 +200,8 @@ export class AgentExporter implements ApmExporter {
     for (const k of s.nums.keys()) metrics.set(k, s.nums.get(k) ?? 0);
     metrics.set("process_id", this.pid);
     metrics.set("_sampling_priority_v1", s.trace.priority);
-    if (s.measured) metrics.set("_dd.measured", 1);
-    const parent = s.parent;
-    const topLevel = parent === null || (parent as ApmSpan).service !== s.service;
-    if (topLevel) metrics.set("_dd.top_level", 1);
+    if (s.measured || s.component.length > 0) metrics.set("_dd.measured", 1);
+    if (s.parent === null) metrics.set("_dd.top_level", 1); // (dd-trace 5 marks the local root only)
     if (first) {
       meta.set("_dd.p.dm", "-0");
       if (s.trace.hi !== "0000000000000000") meta.set("_dd.p.tid", s.trace.hi);
@@ -207,7 +220,7 @@ export class AgentExporter implements ApmExporter {
     const parentId = s.parentId.length > 0 ? s.parentId : "0000000000000000";
     return (
       `{"trace_id":${s.ddTraceId()},"span_id":${s.ddSpanId()},"parent_id":${hexToDdId(parentId)},"name":${JSON.stringify(s.name)},` +
-      `"resource":${JSON.stringify(s.resource)},"service":${JSON.stringify(s.service)}${type},"start":${nsText(s.startNs)},` +
+      `"resource":${JSON.stringify(s.resource)},"service":${JSON.stringify(service)}${type},"start":${nsText(s.startNs)},` +
       `"duration":${nsText(s.durationNs)},"error":${s.error ? 1 : 0},"meta":{${m.join(",")}},"metrics":{${n.join(",")}}}`
     );
   }
