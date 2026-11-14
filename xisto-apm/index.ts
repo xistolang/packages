@@ -23,13 +23,13 @@ declare function monoNs(): number;
 declare function hostname(): string;
 
 /** What an agent sends finished traces to: the backend's protocol (Datadog Agent, OTLP, Elastic intake). */
-export interface Exporter {
+export interface ApmExporter {
   /** Sends these traces (each a list of spans, root first); resolves once sent (or failed: never rejects). */
-  send(traces: Span[][]): Promise<void>;
+  send(traces: ApmSpan[][]): Promise<void>;
 }
 
 /** The settings of the service being traced (the agent's init/start options and environment). */
-export class ServiceInfo {
+export class ApmServiceInfo {
   service: string = "";
   env: string = "";
   version: string = "";
@@ -41,11 +41,11 @@ export class ServiceInfo {
 }
 
 /** The spans of one trace in this process. */
-export class Trace {
+export class ApmTrace {
   /** the trace id's two halves, 16 hex digits each */
   hi: string;
   lo: string;
-  spans: Span[] = [];
+  spans: ApmSpan[] = [];
   open: int = 0;
   /** keep (1), drop (0); from the sampler or the incoming request */
   priority: int = 1;
@@ -60,14 +60,14 @@ export class Trace {
 }
 
 /** One operation: a request served, a query, a call made. */
-export class Span {
-  trace: Trace;
+export class ApmSpan {
+  trace: ApmTrace;
   /** 16 hex digits */
   id: string;
   /** the parent's id ("" for a root) */
   parentId: string;
   /** the parent in this process (null for a root, and for a span whose parent came from another service) */
-  parent: Span | null;
+  parent: ApmSpan | null;
   name: string;
   resource: string = "";
   service: string = "";
@@ -84,13 +84,15 @@ export class Span {
   errorStack: string = "";
   /** dd-trace's _dd.measured (trace() and wrap() spans, integrations) */
   measured: boolean = false;
+  /** the agent's own object for this span (dd-trace's ApmSpan, Elastic's Transaction...), so that the same one comes back */
+  facade: any = null;
   /** nanoseconds since the epoch (a number: past 2^53 xisto's int stops) */
   startNs: number;
   durationNs: number = 0;
   ended: boolean = false;
   private startMono: number;
 
-  constructor(trace: Trace, id: string, parentId: string, parent: Span | null, name: string) {
+  constructor(trace: ApmTrace, id: string, parentId: string, parent: ApmSpan | null, name: string) {
     this.trace = trace;
     this.id = id;
     this.parentId = parentId;
@@ -101,7 +103,7 @@ export class Span {
   }
 
   /** A tag: a number goes with the numbers, an Error sets the error, anything else is kept as text. */
-  setTag(key: string, value: any): Span {
+  setTag(key: string, value: any): ApmSpan {
     if (value === null) return this;
     if (typeof value === "number") {
       this.nums.set(key, value as number);
@@ -118,16 +120,16 @@ export class Span {
     this.tags.set(key, String(value));
     return this;
   }
-  setText(key: string, value: string): Span {
+  setText(key: string, value: string): ApmSpan {
     this.tags.set(key, value);
     return this;
   }
-  setNumber(key: string, value: number): Span {
+  setNumber(key: string, value: number): ApmSpan {
     this.nums.set(key, value);
     return this;
   }
   /** Marks the span failed with this error (its type, message and stack). */
-  setError(err: Error): Span {
+  setError(err: Error): ApmSpan {
     this.error = true;
     this.errorType = err.name;
     this.errorMessage = err.message;
@@ -177,7 +179,7 @@ function isHex(s: string, n: int): boolean {
 }
 
 /** Where a span comes from: its parent here, or the trace and span of the service that called this one. */
-export class SpanParent {
+export class ApmParent {
   traceHi: string;
   traceLo: string;
   spanId: string;
@@ -191,38 +193,38 @@ export class SpanParent {
 }
 
 /** The options of startSpan(). */
-export class SpanOptions {
+export class ApmSpanOptions {
   resource: string = "";
   type: string = "";
   kind: string = "internal";
   service: string = "";
   component: string = "";
   /** the parent span (by default the active one); a remote parent comes in remote */
-  childOf: Span | null = null;
-  remote: SpanParent | null = null;
+  childOf: ApmSpan | null = null;
+  remote: ApmParent | null = null;
   /** no parent at all, even with an active span */
   root: boolean = false;
   measured: boolean = false;
 }
 
-const store: AsyncLocalStorage<Span> = new AsyncLocalStorage<Span>();
+const store: AsyncLocalStorage<ApmSpan> = new AsyncLocalStorage<ApmSpan>();
 
 /** The tracer registry: whether an agent is running, its service and where its traces go. */
 export class Apm {
   static on: boolean = false;
-  static info: ServiceInfo = new ServiceInfo();
-  static exporter: Exporter | null = null;
-  static pending: Span[][] = [];
+  static info: ApmServiceInfo = new ApmServiceInfo();
+  static exporter: ApmExporter | null = null;
+  static pending: ApmSpan[][] = [];
   static pendingSpans: int = 0;
   static flushing: boolean = false;
   static timer: int = 0;
   /** called with each span as it starts (agents: their own defaults, e.g. Elastic's transaction names) */
-  static onStart: ((span: Span) => void) | null = null;
+  static onStart: ((span: ApmSpan) => void) | null = null;
   static flushMs: int = 2000;
   static exitHooked: boolean = false;
 
   /** Starts tracing: spans are made from now on and sent to the exporter. */
-  static start(info: ServiceInfo, exporter: Exporter): void {
+  static start(info: ApmServiceInfo, exporter: ApmExporter): void {
     Apm.info = info;
     Apm.exporter = exporter;
     Apm.on = true;
@@ -234,12 +236,16 @@ export class Apm {
       });
     }
   }
+  /** How often queued traces are sent (before start()). */
+  static setFlushInterval(ms: int): void {
+    Apm.flushMs = ms;
+  }
   /** Stops tracing (spans already ended are still sent at the next flush). */
   static stop(): void {
     Apm.on = false;
   }
   /** (internal) a span ended: its trace goes to the queue when it was the last one open */
-  static spanEnded(span: Span): void {
+  static spanEnded(span: ApmSpan): void {
     const t = span.trace;
     t.open--;
     if (t.open > 0) return;
@@ -265,30 +271,30 @@ export function enabled(): boolean {
 }
 
 /** The span of the current asynchronous flow, or null. */
-export function activeSpan(): Span | null {
+export function activeSpan(): ApmSpan | null {
   return store.getStore();
 }
 
 /** Starts a span: a child of the options' parent (by default the active span), or a new trace. Null when no agent
  * is tracing. */
-export function startSpan(name: string, options: SpanOptions | null = null): Span | null {
+export function startSpan(name: string, options: ApmSpanOptions | null = null): ApmSpan | null {
   if (!Apm.on) return null;
-  const o = options ?? new SpanOptions();
-  const parent: Span | null = o.root ? null : o.childOf !== null ? o.childOf : o.remote !== null ? null : store.getStore();
-  let span: Span;
+  const o = options ?? new ApmSpanOptions();
+  const parent: ApmSpan | null = o.root ? null : o.childOf !== null ? o.childOf : o.remote !== null ? null : store.getStore();
+  let span: ApmSpan;
   if (parent !== null) {
-    span = new Span(parent.trace, randomId(), parent.id, parent, name);
+    span = new ApmSpan(parent.trace, randomId(), parent.id, parent, name);
   } else if (o.remote !== null) {
-    const r = o.remote as SpanParent;
-    const t = new Trace(r.traceHi, r.traceLo);
+    const r = o.remote as ApmParent;
+    const t = new ApmTrace(r.traceHi, r.traceLo);
     t.priority = r.priority;
-    span = new Span(t, randomId(), r.spanId, null, name);
+    span = new ApmSpan(t, randomId(), r.spanId, null, name);
   } else {
     // (the high half as dd-trace makes it: the start's seconds in 32 bits, then zeros)
     const secs = Math.trunc(nowNs() / 1000000000).toString(16);
-    const t = new Trace("00000000".slice(secs.length) + secs + "00000000", randomId());
+    const t = new ApmTrace("00000000".slice(secs.length) + secs + "00000000", randomId());
     t.priority = Apm.info.sampleRate >= 1 || Math.random() < Apm.info.sampleRate ? 1 : 0;
-    span = new Span(t, randomId(), "", null, name);
+    span = new ApmSpan(t, randomId(), "", null, name);
   }
   span.trace.spans.push(span);
   span.trace.open++;
@@ -304,13 +310,13 @@ export function startSpan(name: string, options: SpanOptions | null = null): Spa
 }
 
 /** Runs fn with span active (the asynchronous flow it starts too); its value returned. */
-export function runIn<T>(span: Span | null, fn: () => T): T {
+export function runIn<T>(span: ApmSpan | null, fn: () => T): T {
   if (span === null) return fn();
   return store.run(span, fn);
 }
 
 /** Ends span when value settles (a promise), or now (any other value); an error marks it. */
-export function finishWith(span: Span, value: any): any {
+export function finishWith(span: ApmSpan, value: any): any {
   const u: unknown = value;
   if (isPromise(u)) {
     onSettle(u, (failed: boolean, err: Error | null): void => {
@@ -325,7 +331,7 @@ export function finishWith(span: Span, value: any): any {
 
 /** Runs fn inside a new span that ends with it: when it returns or throws, or when the promise it returns settles
  * (an async fn). Its value is given back as is (await it for an async fn's). */
-export function trace(name: string, options: SpanOptions | null, fn: (span: Span | null) => any): any {
+export function trace(name: string, options: ApmSpanOptions | null, fn: (span: ApmSpan | null) => any): any {
   const span = startSpan(name, options);
   if (span === null) return fn(null);
   try {
@@ -339,7 +345,7 @@ export function trace(name: string, options: SpanOptions | null, fn: (span: Span
 }
 
 /** Runs an async fn inside a new span that ends when its promise settles. */
-export async function traceAsync<T>(name: string, options: SpanOptions | null, fn: (span: Span | null) => Promise<T>): Promise<T> {
+export async function traceAsync<T>(name: string, options: ApmSpanOptions | null, fn: (span: ApmSpan | null) => Promise<T>): Promise<T> {
   const span = startSpan(name, options);
   if (span === null) return await fn(null);
   try {
@@ -354,11 +360,11 @@ export async function traceAsync<T>(name: string, options: SpanOptions | null, f
 
 /** The parent an incoming request carries in its headers (W3C traceparent, Datadog, Elastic), or null. Header names in
  * lower case. */
-export function extract(headers: Map<string, string>): SpanParent | null {
+export function extract(headers: Map<string, string>): ApmParent | null {
   const tp = headers.get("traceparent") ?? headers.get("elastic-apm-traceparent");
   if (tp !== null) {
     const p = tp.toLowerCase().split("-");
-    if (p.length >= 4 && isHex(p[1], 32) && isHex(p[2], 16)) return new SpanParent(p[1].slice(0, 16), p[1].slice(16), p[2], p[3] === "01" ? 1 : 0);
+    if (p.length >= 4 && isHex(p[1], 32) && isHex(p[2], 16)) return new ApmParent(p[1].slice(0, 16), p[1].slice(16), p[2], p[3] === "01" ? 1 : 0);
   }
   const dt = headers.get("x-datadog-trace-id");
   const dp = headers.get("x-datadog-parent-id");
@@ -372,13 +378,13 @@ export function extract(headers: Map<string, string>): SpanParent | null {
       for (const kv of tags.split(",")) if (kv.startsWith("_dd.p.tid=") && isHex(kv.slice(10), 16)) hi = kv.slice(10);
     }
     const pr = headers.get("x-datadog-sampling-priority");
-    return new SpanParent(hi, lo, id, pr !== null && Number(pr) <= 0 ? 0 : 1);
+    return new ApmParent(hi, lo, id, pr !== null && Number(pr) <= 0 ? 0 : 1);
   }
   return null;
 }
 
 /** The headers that carry span to the service it calls (W3C traceparent and Datadog's). */
-export function inject(span: Span, headers: Map<string, string>): void {
+export function inject(span: ApmSpan, headers: Map<string, string>): void {
   const flags = span.trace.priority > 0 ? "01" : "00";
   headers.set("traceparent", `00-${span.traceIdHex()}-${span.spanIdHex()}-${flags}`);
   headers.set("x-datadog-trace-id", span.ddTraceId());
@@ -388,7 +394,7 @@ export function inject(span: Span, headers: Map<string, string>): void {
 }
 
 /** The ids of the active span for log correlation (empty strings when none). */
-export class LogIds {
+export class ApmLogIds {
   traceId: string = "";
   spanId: string = "";
   /** Datadog's decimal ids (dd.trace_id, dd.span_id) */
@@ -397,18 +403,35 @@ export class LogIds {
   /** the id of the root span of this service (Elastic's transaction.id) */
   transactionId: string = "";
 }
-export function logIds(): LogIds {
-  const ids = new LogIds();
+export function logIds(): ApmLogIds {
+  const ids = new ApmLogIds();
   const s = store.getStore();
   if (s === null) return ids;
   ids.traceId = s.traceIdHex();
   ids.spanId = s.spanIdHex();
   ids.ddTraceId = s.ddTraceId();
   ids.ddSpanId = s.ddSpanId();
-  let root: Span = s;
-  while (root.parent !== null && (root.parent as Span).service === s.service) root = root.parent as Span;
+  let root: ApmSpan = s;
+  while (root.parent !== null && (root.parent as ApmSpan).service === s.service) root = root.parent as ApmSpan;
   ids.transactionId = root.spanIdHex();
   return ids;
+}
+
+// the same as startSpan/extract/inject under names an agent package can import while it exports its own
+// startSpan/extract/inject (an import renamed with `as` next to a declaration of the same name renames that one)
+export function newSpan(name: string, options: ApmSpanOptions | null = null): ApmSpan | null {
+  return startSpan(name, options);
+}
+export function extractParent(headers: Map<string, string>): ApmParent | null {
+  return extract(headers);
+}
+export function injectHeaders(span: ApmSpan, headers: Map<string, string>): void {
+  inject(span, headers);
+}
+
+/** A new random id, 16 hex digits. */
+export function newId(): string {
+  return randomId();
 }
 
 /** The host name, for the agents' metadata. */
@@ -417,9 +440,9 @@ export function hostName(): string {
 }
 
 /** The trace's root span in this process (where an agent puts its trace-level tags). */
-export function localRoot(span: Span): Span {
-  let r: Span = span;
-  while (r.parent !== null) r = r.parent as Span;
+export function localRoot(span: ApmSpan): ApmSpan {
+  let r: ApmSpan = span;
+  while (r.parent !== null) r = r.parent as ApmSpan;
   return r;
 }
 
@@ -441,7 +464,7 @@ function attrNum(key: string, value: number): string {
 }
 
 /** Sends traces as OTLP/HTTP JSON to url (…/v1/traces) with these headers (the backend's key). */
-export class OtlpExporter implements Exporter {
+export class ApmOtlpExporter implements ApmExporter {
   url: string;
   headers: Map<string, string>;
   /** resource attributes added to service.name & co (the backend's own, e.g. Dynatrace's dt.entity.*) */
@@ -451,7 +474,7 @@ export class OtlpExporter implements Exporter {
     this.headers = headers;
   }
   /** The OTLP request body of these traces. */
-  body(traces: Span[][]): string {
+  body(traces: ApmSpan[][]): string {
     const info = Apm.info;
     const res: string[] = [attr("service.name", info.service), attr("telemetry.sdk.name", "xisto-apm"), attr("telemetry.sdk.language", "nodejs")];
     if (info.version.length > 0) res.push(attr("service.version", info.version));
@@ -484,7 +507,7 @@ export class OtlpExporter implements Exporter {
     }
     return `{"resourceSpans":[{"resource":{"attributes":[${res.join(",")}]},"scopeSpans":[{"scope":{"name":"xisto-apm","version":"0.1.0"},"spans":[${spans.join(",")}]}]}]}`;
   }
-  async send(traces: Span[][]): Promise<void> {
+  async send(traces: ApmSpan[][]): Promise<void> {
     const h: Record<string, string> = { "Content-Type": "application/json" };
     for (const k of this.headers.keys()) h[k] = this.headers.get(k) ?? "";
     try {
