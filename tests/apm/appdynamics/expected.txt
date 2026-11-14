@@ -1,3 +1,0 @@
-current is tx: true
-header: true
-after end: true

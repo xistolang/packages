@@ -3,8 +3,6 @@
 // Node: ecsFormat() returns pino's messageKey/timestamp/formatters, spread into the options
 // ({ ...base, ...ecsFormat() }); here it returns nestjs-pino's options with the ECS ones set (xisto has no object
 // spread): LoggerModule.forRoot({ pinoHttp: ecsFormat(), renameContext: "log.logger" }).
-// APM: the lines get trace.id, transaction.id and span.id of the active span from nestjs-pino (which builds them)
-// when an agent is started (xisto-apm), as apmIntegration does with Elastic's agent.
 import { PinoHttpOptions } from "nestjs-pino";
 
 /** Options of ecsFormat (serviceName goes on each line; the APM and request conversions are accepted). */

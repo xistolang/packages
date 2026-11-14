@@ -1,8 +1,0 @@
-started: true
-current is t: true name: POST /checkout type: request
-current span is s: true span name: SELECT * FROM cart type: db
-trace ids keys: trace.id,transaction.id trace id length: 32
-traceparent: true
-outcome: success result: HTTP 2xx
-after await current is inner: true
-flushed

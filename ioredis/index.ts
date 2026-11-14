@@ -10,12 +10,7 @@
 // within commandTimeout is "Command timed out".
 // Node: ioredis also reconnects in the background with no command waiting (and emits its events then); here the
 // attempts are made by the commands that need the connection.
-//
-// APM: with an agent started (xisto-apm), each command sent (a pipeline's too) is a client span "redis.command"
-// (component ioredis, type redis, resource the command in lower case, redis.raw_command, out.host,
-// network.destination.port), as dd-trace's ioredis plugin; a failed attempt marks its span.
-import { NativeRedis, endSpan, redisServer, redisSpan } from "redis";
-import { enabled } from "xisto-apm";
+import { NativeRedis } from "redis";
 import { setTimeout as sleep } from "xisto:timers/promises";
 
 /** new Redis(options): where the server is and how the client behaves. */
@@ -94,7 +89,6 @@ function strings(values: (string | number)[]): string[] {
 /** A Redis client, as ioredis's default export. */
 export class Redis {
   private readonly native: NativeRedis;
-  private readonly server: [string, int];
   private readonly listeners: Map<string, ((err: Error) => void)[]> = new Map<string, ((err: Error) => void)[]>();
   private readonly maxRetries: number;
   private readonly unlimitedRetries: boolean;
@@ -117,7 +111,6 @@ export class Redis {
       warnUnneededPassword: true,
     };
     this.native = new NativeRedis(cfg);
-    this.server = redisServer(cfg.url, cfg.host, Math.trunc(cfg.port ?? 0));
     this.unlimitedRetries = o.maxRetriesPerRequest === null && "maxRetriesPerRequest" in o;
     this.maxRetries = o.maxRetriesPerRequest ?? 20;
     this.status = o.lazyConnect === true ? "wait" : "connecting";
@@ -221,13 +214,9 @@ export class Redis {
   private async str(args: string[]): Promise<string | null> {
     for (;;) {
       await this.ensure();
-      const span = enabled() ? redisSpan("ioredis", args[0].toLowerCase(), args, this.server[0], this.server[1]) : null;
       try {
-        const r = this.native.str(args);
-        endSpan(span, null);
-        return r;
+        return this.native.str(args);
       } catch (e) {
-        endSpan(span, e as Error);
         this.failed(e, args);
       }
     }
@@ -236,13 +225,9 @@ export class Redis {
   private async int(args: string[]): Promise<number> {
     for (;;) {
       await this.ensure();
-      const span = enabled() ? redisSpan("ioredis", args[0].toLowerCase(), args, this.server[0], this.server[1]) : null;
       try {
-        const r = Number(this.native.int(args));
-        endSpan(span, null);
-        return r;
+        return Number(this.native.int(args));
       } catch (e) {
-        endSpan(span, e as Error);
         this.failed(e, args);
       }
     }
@@ -251,13 +236,9 @@ export class Redis {
   private async list(args: string[]): Promise<string[]> {
     for (;;) {
       await this.ensure();
-      const span = enabled() ? redisSpan("ioredis", args[0].toLowerCase(), args, this.server[0], this.server[1]) : null;
       try {
-        const r = this.native.strs(args);
-        endSpan(span, null);
-        return r;
+        return this.native.strs(args);
       } catch (e) {
-        endSpan(span, e as Error);
         this.failed(e, args);
       }
     }
@@ -266,13 +247,9 @@ export class Redis {
   private async nullableList(args: string[]): Promise<(string | null)[]> {
     for (;;) {
       await this.ensure();
-      const span = enabled() ? redisSpan("ioredis", args[0].toLowerCase(), args, this.server[0], this.server[1]) : null;
       try {
-        const r = this.native.strsn(args);
-        endSpan(span, null);
-        return r;
+        return this.native.strsn(args);
       } catch (e) {
-        endSpan(span, e as Error);
         this.failed(e, args);
       }
     }
@@ -281,13 +258,9 @@ export class Redis {
   private async any(args: string[]): Promise<unknown> {
     for (;;) {
       await this.ensure();
-      const span = enabled() ? redisSpan("ioredis", args[0].toLowerCase(), args, this.server[0], this.server[1]) : null;
       try {
-        const r: unknown = JSON.parse(this.native.json(args));
-        endSpan(span, null);
-        return r;
+        return JSON.parse(this.native.json(args));
       } catch (e) {
-        endSpan(span, e as Error);
         this.failed(e, args);
       }
     }

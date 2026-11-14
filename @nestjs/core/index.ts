@@ -4,15 +4,7 @@
 // exception filters, parameter decorators, the ValidationPipe and Nest's error bodies. A request runs as in Nest:
 // middleware, guards (global, controller, route), interceptors around the route (same order), then the pipes
 // and the handler; an exception anywhere goes to the exception filters.
-//
-// APM: with an agent started (xisto-apm), each request is a server span "web.request" (type web, component express,
-// resource "METHOD /route/:pattern", http.method, http.url, http.route, http.status_code, http.useragent, span.kind
-// server), as dd-trace's express plugin makes it, the parent taken from the request's traceparent / x-datadog-*
-// headers. The span is active for the whole request (middleware, guards, interceptors, handler), so the spans of the
-// queries it makes are its children and tracer.scope().active() finds it; a 5xx status marks it failed, with the
-// exception that caused it.
 import { ClassInfo, MethodInfo } from "xisto:reflect";
-import { ApmSpanOptions, enabled, extractParent, newSpan, runIn } from "xisto-apm";
 import { Observable } from "rxjs";
 import { Request, RequestHandler, Response } from "express";
 import { BodyCheckOptions, checkBody } from "class-validator";
@@ -650,7 +642,7 @@ function requestJson(request: Request): string {
 
 // Nest's answer to a request no route takes: NotFoundException("Cannot GET /x?y=1") after the middleware, through the
 // global exception filters ({"message":"Cannot GET /x","error":"Not Found","statusCode":404} without one)
-function notFound(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpResponse {
+function notFound(r: Route, req: HttpRequest): HttpResponse {
   const request = new Request();
   request.setSource(req);
   request.method = req.method;
@@ -673,62 +665,11 @@ function notFound(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpRe
     }
     throw new NotFoundException(`Cannot ${req.method} ${req.path}${req.search()}`);
   } catch (e) {
-    if (fail !== null) fail.err = e;
     return failure(r, e, ctx);
   }
 }
 
-// (APM) the exception a request ended with, for its span
-class RouteFailure {
-  err: Error | null = null;
-}
-
-const TRACE_HEADERS = ["traceparent", "tracestate", "elastic-apm-traceparent", "x-datadog-trace-id", "x-datadog-parent-id", "x-datadog-sampling-priority", "x-datadog-tags"];
-
-// a request to a route (or to none: found false), inside a "web.request" span when an agent is tracing
-function serve(r: Route, req: HttpRequest, found: boolean): HttpResponse {
-  if (!enabled()) return found ? handle(r, req, null) : notFound(r, req, null);
-  const headers = new Map<string, string>();
-  for (const h of TRACE_HEADERS) {
-    const v = req.header(h);
-    if (v.length > 0) headers.set(h, v);
-  }
-  const o = new ApmSpanOptions();
-  o.type = "web";
-  o.kind = "server";
-  o.component = "express";
-  o.remote = extractParent(headers);
-  o.resource = found ? `${req.method} ${r.path}` : req.method;
-  const span = newSpan("web.request", o);
-  if (span === null) return found ? handle(r, req, null) : notFound(r, req, null);
-  const host = req.header("host");
-  span.setText("http.method", req.method);
-  span.setText("http.url", `http://${host.length > 0 ? host : "localhost"}${req.path}${req.search()}`);
-  if (found) span.setText("http.route", r.path);
-  span.setText("span.kind", "server");
-  const ua = req.header("user-agent");
-  if (ua.length > 0) span.setText("http.useragent", ua);
-  const fail = new RouteFailure();
-  let res: HttpResponse;
-  try {
-    res = runIn(span, (): HttpResponse => (found ? handle(r, req, fail) : notFound(r, req, fail)));
-  } catch (e) {
-    span.setError(e as Error);
-    span.setText("http.status_code", "500");
-    span.finish();
-    throw e;
-  }
-  span.setText("http.status_code", String(res.status));
-  if (res.status >= 500) {
-    const err = fail.err;
-    if (err !== null) span.setError(err);
-    else span.error = true;
-  }
-  span.finish();
-  return res;
-}
-
-function handle(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpResponse {
+function handle(r: Route, req: HttpRequest): HttpResponse {
   const request = new Request();
   request.setSource(req);
   request.method = req.method;
@@ -805,7 +746,6 @@ function handle(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpResp
     }
     return reply(r, response, r.status, JSON_TYPE, r.method.returns.encode(result));
   } catch (e) {
-    if (fail !== null) fail.err = e;
     return failure(r, e, ctx);
   }
 }
@@ -1287,7 +1227,7 @@ export class NestApplication {
         if (anyRoute.length === 0) {
           anyRoute.push(r);
         }
-        const h = (req: HttpRequest): HttpResponse => serve(r, req, true);
+        const h = (req: HttpRequest): HttpResponse => handle(r, req);
         if (rd.verb === "GET") {
           server.get(r.path, h);
         } else if (rd.verb === "POST") {
@@ -1328,7 +1268,7 @@ export class NestApplication {
         upload: "",
         middleware: this.middleware,
       };
-      server.fallback((req: HttpRequest): HttpResponse => serve(nf, req, false));
+      server.fallback((req: HttpRequest): HttpResponse => notFound(nf, req));
     }
     lifecycle("onApplicationBootstrap");
     new Logger("NestApplication").log("Nest application successfully started");
