@@ -3,7 +3,8 @@
 # the test exits.
 collectors() {
   if [ -n "$CPID" ]; then kill $CPID 2>/dev/null; wait $CPID 2>/dev/null; fi
-  base=$((20000 + ($$ * 7 + $(date +%S) * 13 + ${CN:-0} * 101) % 30000)); CN=$((${CN:-0} + 1))
+  sec=$(date +%S); sec=${sec#0} # ("08" and "09" are not octal numbers: without the zero)
+  base=$((20000 + ($$ * 7 + sec * 13 + ${CN:-0} * 101) % 30000)); CN=$((${CN:-0} + 1))
   DDPORT=$base; ELPORT=$((base + 1)); OTLPPORT=$((base + 2))
   rm -f "$OUT/$1.jsonl"
   python3 -I "$ROOT/tests/apm/collectors.py" "$OUT/$1.jsonl" $DDPORT $ELPORT $OTLPPORT > "$OUT/$1-collectors.txt" 2>&1 &
