@@ -243,6 +243,7 @@ export class AgentExporter implements ApmExporter {
           "X-Datadog-Trace-Count": String(traces.length),
         },
         body: body,
+        signal: AbortSignal.timeout(Apm.timeoutMs()),
       });
     } catch (err) {
       // (an Agent that is not there loses the batch, as dd-trace does)

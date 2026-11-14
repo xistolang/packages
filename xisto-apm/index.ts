@@ -226,6 +226,20 @@ export class Apm {
   /** called with each span as it starts (agents: their own defaults, e.g. Elastic's transaction names) */
   static onStart: ((span: ApmSpan) => void) | null = null;
   static flushMs: int = 2000;
+  /** an exporter's request gives up after this long (a collector that hangs must not hold the program) */
+  static sendTimeoutMs: int = 2000;
+  /** at most this many spans wait while a send is in flight; the oldest traces are dropped past it */
+  static maxQueuedSpans: int = 20000;
+  static flushSoonSet: boolean = false;
+  /** the program is ending: one last send, with this shorter limit */
+  static exitTimeoutMs: int = 1000;
+  static exiting: boolean = false;
+  /** The limit of an exporter's request now (shorter once the program is ending). */
+  static timeoutMs(): int {
+    return Apm.exiting ? Apm.exitTimeoutMs : Apm.sendTimeoutMs;
+  }
+  /** traces dropped because the collector could not keep up (or was down) */
+  static dropped: int = 0;
   /** the next fetch is an exporter's own (not traced, as the agents leave their own requests out) */
   static untracedNext: boolean = false;
   static exitHooked: boolean = false;
@@ -240,6 +254,9 @@ export class Apm {
     if (!Apm.exitHooked) {
       Apm.exitHooked = true;
       process.on("beforeExit", () => {
+        // one last send, bounded: a collector that is down or hangs must not hold the end of the program
+        if (Apm.exiting) return;
+        Apm.exiting = true;
         if (Apm.pending.length > 0) Apm.flush();
       });
     }
@@ -264,16 +281,42 @@ export class Apm {
     if (t.priority <= 0 || !Apm.on && Apm.exporter === null) return;
     Apm.pending.push(t.spans);
     Apm.pendingSpans += t.spans.length;
-    if (Apm.pendingSpans >= 1000) Apm.flush();
+    if (Apm.pendingSpans >= 1000 && !Apm.flushSoonSet) {
+      // (from a timer, not here: a send started inside a request would be part of that request, and a collector
+      // that hangs would hold the request's answer)
+      Apm.flushSoonSet = true;
+      setTimeout(() => {
+        Apm.flushSoonSet = false;
+        Apm.flush();
+      }, 0);
+    }
   }
   /** Sends what is queued (a promise that resolves once it is sent). */
   static flush(): Promise<void> {
     const ex = Apm.exporter;
     if (ex === null || Apm.pending.length === 0) return Promise.resolve();
+    if (Apm.flushing) {
+      // one send at a time: while the collector is slow the queue waits, bounded (the oldest traces go first)
+      while (Apm.pendingSpans > Apm.maxQueuedSpans && Apm.pending.length > 0) {
+        const old = Apm.pending.shift();
+        if (old !== undefined) Apm.pendingSpans -= old.length;
+        Apm.dropped++;
+      }
+      return Promise.resolve();
+    }
     const batch = Apm.pending;
     Apm.pending = [];
     Apm.pendingSpans = 0;
-    return ex.send(batch);
+    Apm.flushing = true;
+    return Apm.sendBatch(ex, batch);
+  }
+  static async sendBatch(ex: ApmExporter, batch: ApmSpan[][]): Promise<void> {
+    try {
+      await ex.send(batch);
+    } catch (err) {
+      // (the exporters catch their own errors; nothing reaches the program)
+    }
+    Apm.flushing = false;
   }
 }
 
@@ -531,7 +574,7 @@ export class ApmOtlpExporter implements ApmExporter {
     for (const k of this.headers.keys()) h[k] = this.headers.get(k) ?? "";
     try {
       Apm.skipNextFetch();
-      await fetch(this.url, { method: "POST", headers: h, body: this.body(traces) });
+      await fetch(this.url, { method: "POST", headers: h, body: this.body(traces), signal: AbortSignal.timeout(Apm.timeoutMs()) });
     } catch (err) {
       // (a collector that is down loses this batch, as the agents do; the program goes on)
     }
