@@ -4,6 +4,7 @@
   "license": "Apache-2.0 WITH LLVM-exception",
   "notice": "Ported from node-oracledb 6.10 (thin mode), Copyright (c) 2015, 2025, Oracle and/or its affiliates, dual-licensed under the Apache License 2.0 and the Universal Permissive License 1.0",
   "implements": { "oracledb": "^6" },
+  "dependencies": { "xisto-apm": "0.1.0" },
   "main": "index.ts",
   "native": ["native/ora_crypto.c", "native/ora_dtys.c", "native/oracle.c"],
   "needs": ["net", "crypto"]

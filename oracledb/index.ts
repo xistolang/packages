@@ -4,6 +4,11 @@
 //
 // A result is JSON that a typed declaration decodes, as with pg:
 //   const r: Result<Row> = await conn.execute("select id, name from users where id = :1", [7], { outFormat: OUT_FORMAT_OBJECT });
+//
+// APM: with an agent started (xisto-apm), each execute is a client span "oracle.query" (type sql, resource the SQL,
+// db.type oracle, db.user, db.instance and db.name the service, db.hostname, out.host, network.destination.port), as
+// dd-trace's oracledb plugin; an error marks it. typeorm's Oracle queries go through here too.
+import { ApmSpanOptions, enabled, newSpan } from "xisto-apm";
 
 /** Rows as arrays of column values, in select-list order (node-oracledb's default). */
 export const OUT_FORMAT_ARRAY: int = 4001;
@@ -211,6 +216,55 @@ function rethrow(e: unknown, native: NativePool): void {
 }
 
 // the binds of one execute, as the native driver takes them: values, and each bind parameter object's fields
+/** (APM) where a connection goes: its user, and the host, port and service of its connect string. */
+export class OraTarget {
+  user: string = "";
+  host: string = "";
+  port: int = 0;
+  service: string = "";
+}
+
+// host[:port][/service] of an Easy Connect string (//host:port/service, host/service...); a TNS descriptor's HOST,
+// PORT and SERVICE_NAME
+function oraTarget(user: string | null | undefined, cs: string | null | undefined): OraTarget {
+  const t = new OraTarget();
+  t.user = user ?? "";
+  let c = cs ?? "";
+  if (c.startsWith("(")) {
+    t.host = descField(c, "HOST");
+    const p = descField(c, "PORT");
+    if (p.length > 0) t.port = Math.trunc(Number(p));
+    t.service = descField(c, "SERVICE_NAME");
+    return t;
+  }
+  const scheme = c.indexOf("://");
+  if (scheme >= 0) c = c.slice(scheme + 3);
+  while (c.startsWith("/")) c = c.slice(1);
+  const slash = c.indexOf("/");
+  let hp = c;
+  if (slash >= 0) {
+    hp = c.slice(0, slash);
+    t.service = c.slice(slash + 1);
+    const q = t.service.search(/[:?]/);
+    if (q >= 0) t.service = t.service.slice(0, q);
+  }
+  const colon = hp.lastIndexOf(":");
+  if (colon >= 0) {
+    t.host = hp.slice(0, colon);
+    t.port = Math.trunc(Number(hp.slice(colon + 1)));
+  } else {
+    t.host = hp;
+  }
+  return t;
+}
+function descField(d: string, name: string): string {
+  const u = d.toUpperCase();
+  const i = u.indexOf(`(${name}=`);
+  if (i < 0) return "";
+  const end = d.indexOf(")", i);
+  return d.slice(i + name.length + 2, end < 0 ? d.length : end).trim();
+}
+
 class Binds {
   values: unknown[] = [];
   names: string[] = [];
@@ -265,11 +319,57 @@ export class Connection {
   private handle: int;
   private standalone: boolean;
   private open: boolean = true;
+  /** (APM) the user and connect string of the pool or connection */
+  apmTarget: OraTarget | null = null;
 
   constructor(native: NativePool, handle: int, standalone: boolean) {
     this.native = native;
     this.handle = handle;
     this.standalone = standalone;
+  }
+
+  // (APM) the native execute inside an "oracle.query" span
+  private traced(sql: string, b: Binds, options: ExecuteOptions): object {
+    const o = new ApmSpanOptions();
+    o.resource = sql;
+    o.type = "sql";
+    o.kind = "client";
+    o.component = "oracledb";
+    o.measured = true;
+    const span = newSpan("oracle.query", o);
+    if (span === null) return this.run(sql, b, options);
+    span.setText("db.type", "oracle");
+    const t = this.apmTarget;
+    if (t !== null) {
+      if (t.user.length > 0) span.setText("db.user", t.user);
+      if (t.service.length > 0) {
+        span.setText("db.instance", t.service);
+        span.setText("db.name", t.service);
+      }
+      if (t.host.length > 0) {
+        span.setText("db.hostname", t.host);
+        span.setText("out.host", t.host);
+      }
+      if (t.port > 0) span.setNumber("network.destination.port", t.port);
+    }
+    try {
+      const r = this.run(sql, b, options);
+      span.finish();
+      return r;
+    } catch (e) {
+      span.setError(e as Error);
+      span.finish();
+      throw e;
+    }
+  }
+
+  private run(sql: string, b: Binds, options: ExecuteOptions): object {
+    try {
+      return this.native.execute(this.handle, sql, b.values, b.names, b.dirs, b.types, b.sizes, (options.outFormat ?? OUT_FORMAT_ARRAY) === OUT_FORMAT_OBJECT, options.autoCommit ?? false, options.maxRows ?? 0);
+    } catch (e) {
+      rethrow(e, this.native);
+      throw e;
+    }
   }
 
   /**
@@ -303,12 +403,7 @@ export class Connection {
     this.check();
     this.checkCallTimeout();
     const b = bindsByPosition(binds);
-    try {
-      return this.native.execute(this.handle, sql, b.values, b.names, b.dirs, b.types, b.sizes, (options.outFormat ?? OUT_FORMAT_ARRAY) === OUT_FORMAT_OBJECT, options.autoCommit ?? false, options.maxRows ?? 0);
-    } catch (e) {
-      rethrow(e, this.native);
-      throw e;
-    }
+    return enabled() ? this.traced(sql, b, options) : this.run(sql, b, options);
   }
 
   /**
@@ -336,12 +431,7 @@ export class Connection {
     this.check();
     this.checkCallTimeout();
     const b = bindsByName(binds);
-    try {
-      return this.native.execute(this.handle, sql, b.values, b.names, b.dirs, b.types, b.sizes, (options.outFormat ?? OUT_FORMAT_ARRAY) === OUT_FORMAT_OBJECT, options.autoCommit ?? false, options.maxRows ?? 0);
-    } catch (e) {
-      rethrow(e, this.native);
-      throw e;
-    }
+    return enabled() ? this.traced(sql, b, options) : this.run(sql, b, options);
   }
 
   /** Commits the current transaction. @throws Error on a database error */
@@ -424,11 +514,13 @@ export class Connection {
 /** A set of open sessions that connections are taken from and given back to. */
 export class Pool {
   private native: NativePool;
+  private target: OraTarget;
   private sessionCallback: ((connection: SessionConnection, requestedTag: string, callback: (err?: Error) => void) => void) | null;
 
   constructor(attrs: PoolAttributes) {
     this.native = new NativePool({ user: attrs.user, password: attrs.password, connectString: attrs.connectString ?? attrs.connectionString, poolMax: attrs.poolMax });
     this.sessionCallback = attrs.sessionCallback ?? null;
+    this.target = oraTarget(attrs.user, attrs.connectString ?? attrs.connectionString);
   }
 
   /**
@@ -445,6 +537,7 @@ export class Pool {
       throw e;
     }
     const conn = new Connection(this.native, handle, false);
+    conn.apmTarget = this.target;
     const fn = this.sessionCallback;
     if (fn !== null && conn.takeFresh()) {
       // node-oracledb's sessionCallback: once per new physical connection, before it is handed out
@@ -499,5 +592,7 @@ export async function getConnection(attrs: ConnectionAttributes): Promise<Connec
     rethrow(e, native);
     throw e;
   }
-  return new Connection(native, handle, true);
+  const conn = new Connection(native, handle, true);
+  conn.apmTarget = oraTarget(attrs.user, attrs.connectString ?? attrs.connectionString);
+  return conn;
 }

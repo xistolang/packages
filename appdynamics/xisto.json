@@ -1,0 +1,9 @@
+{
+  "name": "appdynamics",
+  "version": "0.1.0",
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "implements": { "appdynamics": "^24 || ^25 || ^26" },
+  "main": "index.ts",
+  "dependencies": { "xisto-apm": "0.1.0"| ^25 },
+  "needs": ["net"]
+}

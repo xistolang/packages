@@ -1,0 +1,119 @@
+{
+ "headers": [
+  "{\"authorization\": \"Api-Token dt0c01.TOKEN\", \"content-type\": \"application/json\"}"
+ ],
+ "resources": [
+  {
+   "deployment.environment": "test",
+   "service.name": "orders",
+   "telemetry.sdk.language": "nodejs",
+   "telemetry.sdk.name": "xisto-apm"
+  }
+ ],
+ "scopes": [
+  "{\"name\": \"xisto-apm\", \"version\": \"0.1.0\"}"
+ ],
+ "spans": [
+  {
+   "attributes": {
+    "code.function": "nightly",
+    "code.namespace": "Jobs"
+   },
+   "events": [],
+   "kind": 2,
+   "name": "nightly",
+   "spanId": "span:nightly",
+   "status": {
+    "code": 0
+   },
+   "traceId": "trace:nightly"
+  },
+  {
+   "attributes": {
+    "db.name": "shop",
+    "db.response.returned_rows": 1,
+    "db.response.round_trip_count": 1,
+    "db.statement": "SELECT * FROM orders WHERE id = $1",
+    "db.system": "postgresql",
+    "server.address": "db.local",
+    "server.port": 5432
+   },
+   "events": [],
+   "kind": 3,
+   "name": "SELECT shop",
+   "parentSpanId": "span:placeOrder",
+   "spanId": "span:SELECT shop",
+   "status": {
+    "code": 0
+   },
+   "traceId": "0af7651916cd43dd8448eb211c80319c"
+  },
+  {
+   "attributes": {
+    "dt.service.endpoint": "/orders",
+    "order.id": "o-1",
+    "rpc.method": "placeOrder",
+    "rpc.service": "OrderService",
+    "rpc.system": "grpc"
+   },
+   "events": [],
+   "kind": 2,
+   "name": "placeOrder",
+   "parentSpanId": "b7ad6b7169203331",
+   "spanId": "span:placeOrder",
+   "status": {
+    "code": 0
+   },
+   "traceId": "0af7651916cd43dd8448eb211c80319c"
+  },
+  {
+   "attributes": {
+    "dt.service.endpoint": "/pay",
+    "rpc.method": "charge",
+    "rpc.service": "PaymentService",
+    "rpc.system": "http",
+    "server.address": "pay.local",
+    "server.port": 443
+   },
+   "events": [
+    {
+     "attributes": {
+      "exception.message": "card declined",
+      "exception.stacktrace": "<frames>",
+      "exception.type": "Error"
+     },
+     "name": "exception"
+    }
+   ],
+   "kind": 3,
+   "name": "charge",
+   "parentSpanId": "span:placeOrder",
+   "spanId": "span:charge",
+   "status": {
+    "code": 2,
+    "message": "card declined"
+   },
+   "traceId": "0af7651916cd43dd8448eb211c80319c"
+  },
+  {
+   "attributes": {
+    "messaging.destination.kind": "topic",
+    "messaging.destination.name": "orders",
+    "messaging.message.id": "m-1",
+    "messaging.operation": "send",
+    "messaging.system": "kafka",
+    "server.address": "kafka.local",
+    "server.port": 9092
+   },
+   "events": [],
+   "kind": 4,
+   "name": "orders send",
+   "parentSpanId": "span:placeOrder",
+   "spanId": "span:orders send",
+   "status": {
+    "code": 0
+   },
+   "traceId": "0af7651916cd43dd8448eb211c80319c"
+  }
+ ]
+}

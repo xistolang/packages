@@ -1,0 +1,24 @@
+found: 1
+failed: MongoServerError
+job [internal] resource="job" type= component=
+  mongodb.query [client] resource="delete xisto_apm_test.items" type=mongodb component=mongodb
+    db.name=xisto_apm_test.items
+    out.host=<host>
+    out.port=<port>
+  mongodb.query [client] resource="insert xisto_apm_test.items" type=mongodb component=mongodb
+    db.name=xisto_apm_test.items
+    out.host=<host>
+    out.port=<port>
+  mongodb.query [client] resource="find xisto_apm_test.items" type=mongodb component=mongodb
+    db.name=xisto_apm_test.items
+    out.host=<host>
+    out.port=<port>
+mongodb.query [client] resource="ping xisto_apm_test.$cmd" type=mongodb component=mongodb
+  db.name=xisto_apm_test.$cmd
+  out.host=<host>
+  out.port=<port>
+mongodb.query [client] resource="noSuchCommand xisto_apm_test.$cmd" type=mongodb component=mongodb
+  db.name=xisto_apm_test.$cmd
+  out.host=<host>
+  out.port=<port>
+  error: MongoServerError: no such command: 'noSuchCommand'

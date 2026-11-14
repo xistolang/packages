@@ -1,0 +1,70 @@
+{"id":"42","name":"ana"}
+{"id":"7","name":"bia"}
+{"message":"no user 9","error":"Not Found","statusCode":404}
+{"statusCode":500,"message":"Internal server error"}
+{"message":"Cannot GET /nope","error":"Not Found","statusCode":404}
+{"id":"1","name":"ana"}
+done
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"NestApplication","msg":"Nest application successfully started"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID1","span_id":"ID2","service":"shop"},"msg":"user 42"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID1","span_id":"ID3","service":"shop"},"msg":"loading"}
+{"level":50,"time":T,"pid":P,"hostname":H,"context":"ExceptionsHandler","dd":{"trace_id":"ID4","span_id":"ID5","service":"shop"},"msg":"kaboom"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID6","span_id":"ID7","service":"shop"},"msg":"user 1"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID6","span_id":"ID8","service":"shop"},"msg":"loading"}
+web.request [server] resource="GET /users/:id" type=web component=express
+  http.method=GET
+  http.route=/users/:id
+  http.status_code=200
+  http.url=http://HOST/users/42
+  http.useragent=apm-test
+  interceptor.saw=web.request
+  span.kind=server
+  #trace=ID1 #span=ID2 #hex=ID9
+  users.load [internal] resource="users.load" type= component=
+    #trace=ID1 #span=ID3 #hex=ID10
+web.request [server] resource="POST /users" type=web component=express
+  http.method=POST
+  http.route=/users
+  http.status_code=201
+  http.url=http://HOST/users
+  http.useragent=apm-test
+  interceptor.saw=web.request
+  span.kind=server
+  #trace=ID11 #span=ID12 #hex=ID13
+web.request [server] resource="GET /users/missing/:id" type=web component=express
+  http.method=GET
+  http.route=/users/missing/:id
+  http.status_code=404
+  http.url=http://HOST/users/missing/9
+  http.useragent=apm-test
+  interceptor.saw=web.request
+  span.kind=server
+  #trace=ID14 #span=ID15 #hex=ID16
+web.request [server] resource="GET /boom" type=web component=express
+  http.method=GET
+  http.route=/boom
+  http.status_code=500
+  http.url=http://HOST/boom
+  http.useragent=apm-test
+  interceptor.saw=web.request
+  span.kind=server
+  #trace=ID4 #span=ID5 #hex=ID17
+  error: Error: kaboom
+web.request [server] resource="GET" type=web component=express
+  http.method=GET
+  http.status_code=404
+  http.url=http://HOST/nope
+  http.useragent=apm-test
+  span.kind=server
+  #trace=ID18 #span=ID19 #hex=ID20
+web.request [server] resource="GET /users/:id" type=web component=express <- remote
+  http.method=GET
+  http.route=/users/:id
+  http.status_code=200
+  http.url=http://HOST/users/1
+  http.useragent=apm-test
+  interceptor.saw=web.request
+  span.kind=server
+  #trace=ID6 #span=ID7 #hex=ID21
+  users.load [internal] resource="users.load" type= component=
+    #trace=ID6 #span=ID8 #hex=ID22
