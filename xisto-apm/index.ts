@@ -133,7 +133,11 @@ export class ApmSpan {
     this.error = true;
     this.errorType = err.name;
     this.errorMessage = err.message;
-    this.errorStack = err.stack ?? "";
+    // (the built-in TypeError & co: their .stack is not readable through Error in xisto yet, a compiler bug reported to
+    // the compiler session; their stack is left out)
+    const builtin = err.name === "TypeError" || err.name === "RangeError" || err.name === "SyntaxError" || err.name === "ReferenceError" ||
+      err.name === "URIError" || err.name === "EvalError" || err.name === "AggregateError";
+    this.errorStack = builtin ? "" : (err.stack ?? "");
     return this;
   }
   /** Ends the span (now, or at a time in milliseconds since the epoch); a span ends once. */
@@ -307,6 +311,13 @@ export function startSpan(name: string, options: ApmSpanOptions | null = null): 
   const hook = Apm.onStart;
   if (hook !== null) hook(span);
   return span;
+}
+
+/** Makes span the active one for the rest of the current execution and what it starts (null: none), as Elastic's
+ * startTransaction()/startSpan() do. */
+export function enterSpan(span: ApmSpan | null): void {
+  if (span === null) store.disable();
+  else store.enterWith(span);
 }
 
 /** Runs fn with span active (the asynchronous flow it starts too); its value returned. */

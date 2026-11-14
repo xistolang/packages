@@ -1,0 +1,147 @@
+{
+ "headers": [
+  "{\"api-key\": \"0123456789abcdef0123456789abcdef01234567\", \"content-type\": \"application/json\"}"
+ ],
+ "resources": [
+  {
+   "service.name": "shop",
+   "telemetry.sdk.language": "nodejs",
+   "telemetry.sdk.name": "xisto-apm"
+  }
+ ],
+ "scopes": [
+  "{\"name\": \"xisto-apm\", \"version\": \"0.1.0\"}"
+ ],
+ "spans": [
+  {
+   "attributes": {
+    "cart": 3,
+    "coupon": "X1",
+    "region": "eu",
+    "url.path": "/checkout"
+   },
+   "events": [],
+   "kind": 2,
+   "name": "/checkout",
+   "spanId": "span:/checkout",
+   "status": {
+    "code": 0
+   },
+   "traceId": "trace:/checkout"
+  },
+  {
+   "attributes": {
+    "db.rows": 2
+   },
+   "events": [],
+   "kind": 1,
+   "name": "db.query",
+   "parentSpanId": "span:/checkout",
+   "spanId": "span:db.query",
+   "status": {
+    "code": 0
+   },
+   "traceId": "trace:/checkout"
+  },
+  {
+   "attributes": {
+    "disk": "sda",
+    "transaction.group": "jobs"
+   },
+   "events": [
+    {
+     "attributes": {
+      "exception.message": "disk full",
+      "exception.stacktrace": "<frames>",
+      "exception.type": "Error"
+     },
+     "name": "exception"
+    }
+   ],
+   "kind": 1,
+   "name": "rebuild",
+   "spanId": "span:rebuild",
+   "status": {
+    "code": 2,
+    "message": "disk full"
+   },
+   "traceId": "trace:rebuild"
+  },
+  {
+   "attributes": {
+    "transaction.group": "Nodejs"
+   },
+   "events": [],
+   "kind": 1,
+   "name": "manual",
+   "spanId": "span:manual",
+   "status": {
+    "code": 0
+   },
+   "traceId": "trace:manual"
+  },
+  {
+   "attributes": {
+    "transport.type": "HTTP",
+    "url.path": "/remote"
+   },
+   "events": [],
+   "kind": 2,
+   "name": "/remote",
+   "parentSpanId": "b7ad6b7169203331",
+   "spanId": "span:/remote",
+   "status": {
+    "code": 0
+   },
+   "traceId": "0af7651916cd43dd8448eb211c80319c"
+  },
+  {
+   "attributes": {
+    "url.path": "/fail"
+   },
+   "events": [
+    {
+     "attributes": {
+      "exception.message": "boom",
+      "exception.stacktrace": "<frames>",
+      "exception.type": "Error"
+     },
+     "name": "exception"
+    }
+   ],
+   "kind": 2,
+   "name": "/fail",
+   "spanId": "span:/fail",
+   "status": {
+    "code": 2,
+    "message": "boom"
+   },
+   "traceId": "trace:/fail"
+  },
+  {
+   "attributes": {
+    "url.path": "/users/42"
+   },
+   "events": [],
+   "kind": 2,
+   "name": "users/show",
+   "spanId": "span:users/show",
+   "status": {
+    "code": 0
+   },
+   "traceId": "trace:users/show"
+  },
+  {
+   "attributes": {},
+   "events": [],
+   "kind": 1,
+   "name": "step",
+   "parentSpanId": "span:rebuild",
+   "spanId": "span:step",
+   "status": {
+    "code": 0
+   },
+   "traceId": "trace:rebuild"
+  }
+ ]
+}

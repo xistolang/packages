@@ -61,6 +61,10 @@ nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth
 apm-dd tests/apm/dd/run.sh ^ok:
 apm-dd-redis tests/apm/dd-redis/run.sh
+apm-elastic tests/apm/elastic/run.sh ^ok:.elastic-apm-node
+apm-newrelic tests/apm/newrelic/run.sh ^ok:.newrelic
+apm-dynatrace tests/apm/dynatrace/run.sh ^ok:.dynatrace
+apm-appdynamics tests/apm/appdynamics/run.sh ^ok:.appdynamics
 nest-forms examples/nest-forms/test/run.sh ^ok:.nest-forms
 conduit -
 "

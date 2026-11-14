@@ -95,7 +95,7 @@ def make_handler(kind):
         def handle_any(self):
             data = self.body()
             path = self.path.split("?")[0]
-            hdr = {k.lower(): v for k, v in self.headers.items() if k.lower() in ("content-type", "api-key", "authorization", "x-datadog-trace-count", "datadog-meta-lang")}
+            hdr = {k.lower(): v for k, v in self.headers.items() if k.lower() in ("content-type", "api-key", "x-api-key", "authorization", "x-datadog-trace-count", "datadog-meta-lang")}
             if kind == "dd" and path.startswith("/v0.4/traces"):
                 ct = self.headers.get("Content-Type", "")
                 traces = json.loads(data) if "json" in ct else unpack(data)
