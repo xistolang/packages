@@ -55,6 +55,7 @@ pg tests/pg/run.sh
 typeorm tests/typeorm/run.sh
 redis tests/redis/run.sh
 ioredis tests/ioredis/run.sh
+apm-instr tests/apm-instr/run.sh ^ok.apm
 nest-features examples/nest-features/test/run.sh ^ok:.nest-features
 nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth

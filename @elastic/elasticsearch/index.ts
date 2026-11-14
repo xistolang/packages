@@ -1,5 +1,9 @@
 // @elastic/elasticsearch (contract ^8): the client for xisto, over fetch.
 //
+// APM: with an agent started (xisto-apm), each call is a client span "elasticsearch.query" (type elasticsearch,
+// resource "METHOD /path" with the numbers as ?, db.type elasticsearch, elasticsearch.url, elasticsearch.method,
+// elasticsearch.body), as dd-trace's elasticsearch plugin; an error thrown (a status, a refused connection) marks it.
+//
 // As in the version 8 client, a call takes one object of parameters and returns the response body. Each call
 // knows which of its parameters go to the path (index, id, name) and to the query string (refresh, routing...);
 // the rest is the body. Responses are `object` (JSON): give them a type where they are read
@@ -17,6 +21,8 @@ declare function without(json: string, keys: string): string;
 declare function text(raw: string): string;
 declare function ndjson(raw: string): string;
 declare function encode(s: string, path: boolean): string;
+
+import { ApmSpanOptions, enabled, newSpan } from "xisto-apm";
 
 export interface BasicAuth {
   username?: string;
@@ -185,6 +191,33 @@ class Transport {
 
   /** The body of the response (and its status in .status), or an error the way the npm client throws it. */
   async request(method: string, path: string, body: string, ndjsonBody: boolean, options: TransportRequestOptions | null): Promise<Reply> {
+    if (!enabled()) return await this.requestRaw(method, path, body, ndjsonBody, options);
+    const q = path.indexOf("?");
+    const bare = q >= 0 ? path.slice(0, q) : path;
+    const o = new ApmSpanOptions();
+    o.resource = `${method} ${bare.replace(/[0-9]+/g, "?")}`;
+    o.type = "elasticsearch";
+    o.kind = "client";
+    o.component = "elasticsearch";
+    o.measured = true;
+    const span = newSpan("elasticsearch.query", o);
+    if (span === null) return await this.requestRaw(method, path, body, ndjsonBody, options);
+    span.setText("db.type", "elasticsearch");
+    span.setText("elasticsearch.url", bare);
+    span.setText("elasticsearch.method", method);
+    if (body.length > 0) span.setText("elasticsearch.body", body);
+    try {
+      const r = await this.requestRaw(method, path, body, ndjsonBody, options);
+      span.finish();
+      return r;
+    } catch (e) {
+      span.setError(e as Error);
+      span.finish();
+      throw e;
+    }
+  }
+
+  private async requestRaw(method: string, path: string, body: string, ndjsonBody: boolean, options: TransportRequestOptions | null): Promise<Reply> {
     if (this.closed) throw new Error("The client is closed");
     const timeout: int = options !== null ? Math.trunc(options.requestTimeout ?? Number(this.timeout)) : this.timeout;
     const retries: int = options !== null ? Math.trunc(options.maxRetries ?? Number(this.retries)) : this.retries;
