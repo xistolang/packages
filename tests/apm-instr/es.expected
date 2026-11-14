@@ -1,0 +1,17 @@
+failed: ResponseError
+job [internal] resource="job" type= component=
+  elasticsearch.query [client] resource="PUT /items/_doc/?" type=elasticsearch component=elasticsearch
+    db.type=elasticsearch
+    elasticsearch.body={"name":"a"}
+    elasticsearch.method=PUT
+    elasticsearch.url=/items/_doc/42
+  elasticsearch.query [client] resource="POST /items/_search" type=elasticsearch component=elasticsearch
+    db.type=elasticsearch
+    elasticsearch.body={"query":{"match":{"name":"a"}}}
+    elasticsearch.method=POST
+    elasticsearch.url=/items/_search
+elasticsearch.query [client] resource="GET /nope/_doc/?" type=elasticsearch component=elasticsearch
+  db.type=elasticsearch
+  elasticsearch.method=GET
+  elasticsearch.url=/nope/_doc/7
+  error: ResponseError: index_not_found_exception

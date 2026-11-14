@@ -8,6 +8,10 @@
 // ("connect ECONNREFUSED 127.0.0.1:27017"). db(name).command(cmd), db.collection(name) with find/findOne/insertOne/
 // insertMany/updateOne/updateMany/deleteOne/deleteMany/countDocuments/aggregate/drop.
 //
+// APM: with an agent started (xisto-apm), each command sent (mongoose's too) is a client span "mongodb.query" (type
+// mongodb, resource "<command> <db>.<collection>", db.name the namespace, out.host, out.port), as dd-trace's
+// mongodb-core plugin; a failed command marks it.
+//
 // Values written: string, number (an integer in the int32 range as int32, else double, as js-bson), boolean, null,
 // Date, ObjectId, Buffer/Uint8Array (binary), bigint (int64), arrays, Records and objects of classes. Read back:
 // ObjectId as its hex string (a field typed ObjectId reads it into an ObjectId), a date as ISO text (a Date field
@@ -15,6 +19,8 @@
 // Not yet: TLS, mongodb+srv:// (DNS SRV), SCRAM-SHA-1 and other mechanisms, sessions/transactions, a RegExp value
 // (write { $regex, $options }), change streams, server monitoring (a server that goes away is seen at the next
 // command).
+
+import { ApmSpanOptions, enabled, newSpan } from "xisto-apm";
 
 declare class NativeClient {
   constructor(config: object);
@@ -643,6 +649,44 @@ export class MongoClient {
 
   /** @internal a command on a database: the reply as JSON text (MongoServerError when ok is not 1) */
   commandText(db: string, cmd: Document): string {
+    return enabled() ? this.traced(db, cmd, false) : this.commandRaw(db, cmd);
+  }
+
+  cursorText(db: string, cmd: Document): string {
+    return enabled() ? this.traced(db, cmd, true) : this.cursorRaw(db, cmd);
+  }
+
+  // (APM) a command inside a "mongodb.query" span
+  private traced(db: string, cmd: Document, cursor: boolean): string {
+    const names = Object.keys(cmd);
+    const name = names.length > 0 ? names[0] : "";
+    const target: unknown = names.length > 0 ? cmd[name] : null;
+    const ns = typeof target === "string" ? db + "." + (target as string) : db + ".$cmd";
+    const o = new ApmSpanOptions();
+    o.resource = `${name} ${ns}`;
+    o.type = "mongodb";
+    o.kind = "client";
+    o.component = "mongodb";
+    o.measured = true;
+    const span = newSpan("mongodb.query", o);
+    if (span === null) return cursor ? this.cursorRaw(db, cmd) : this.commandRaw(db, cmd);
+    span.setText("db.name", ns);
+    if (this.options.hosts.length > 0) {
+      span.setText("out.host", this.options.hosts[0].host);
+      span.setNumber("out.port", this.options.hosts[0].port);
+    }
+    try {
+      const r = cursor ? this.cursorRaw(db, cmd) : this.commandRaw(db, cmd);
+      span.finish();
+      return r;
+    } catch (e) {
+      span.setError(e as Error);
+      span.finish();
+      throw e;
+    }
+  }
+
+  private commandRaw(db: string, cmd: Document): string {
     const n = this.client();
     let reply = "";
     try {
@@ -655,7 +699,7 @@ export class MongoClient {
   }
 
   /** @internal a command whose reply is a cursor (find, aggregate), drained: the documents as JSON text ([...]) */
-  cursorText(db: string, cmd: Document): string {
+  private cursorRaw(db: string, cmd: Document): string {
     const n = this.client();
     let reply = "";
     try {
