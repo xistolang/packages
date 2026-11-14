@@ -12,6 +12,7 @@
 // (AsyncLocalStorage). A trace is exported once all its spans have ended, by the exporter the agent registered, in
 // batches: every 2 s (an unref'd timer), at 1000 spans, and before the program exits.
 import { AsyncLocalStorage } from "node:async_hooks";
+import dc from "node:diagnostics_channel";
 
 declare function isPromise(v: unknown): boolean;
 declare function onSettle(p: unknown, cb: (failed: boolean, err: Error | null) => void): void;
@@ -225,6 +226,8 @@ export class Apm {
   /** called with each span as it starts (agents: their own defaults, e.g. Elastic's transaction names) */
   static onStart: ((span: ApmSpan) => void) | null = null;
   static flushMs: int = 2000;
+  /** the next fetch is an exporter's own (not traced, as the agents leave their own requests out) */
+  static untracedNext: boolean = false;
   static exitHooked: boolean = false;
 
   /** Starts tracing: spans are made from now on and sent to the exporter. */
@@ -232,6 +235,7 @@ export class Apm {
     Apm.info = info;
     Apm.exporter = exporter;
     Apm.on = true;
+    instrumentHttp();
     if (Apm.timer === 0) Apm.timer = setInterval(() => Apm.flush(), Apm.flushMs).unref();
     if (!Apm.exitHooked) {
       Apm.exitHooked = true;
@@ -239,6 +243,10 @@ export class Apm {
         if (Apm.pending.length > 0) Apm.flush();
       });
     }
+  }
+  /** The next fetch is an exporter's own: not traced (call right before it). */
+  static skipNextFetch(): void {
+    Apm.untracedNext = true;
   }
   /** How often queued traces are sent (before start()). */
   static setFlushInterval(ms: int): void {
@@ -522,9 +530,137 @@ export class ApmOtlpExporter implements ApmExporter {
     const h: Record<string, string> = { "Content-Type": "application/json" };
     for (const k of this.headers.keys()) h[k] = this.headers.get(k) ?? "";
     try {
+      Apm.skipNextFetch();
       await fetch(this.url, { method: "POST", headers: h, body: this.body(traces) });
     } catch (err) {
       // (a collector that is down loses this batch, as the agents do; the program goes on)
     }
   }
+}
+
+// ---- HTTP through node:diagnostics_channel (the compiler's node:http and fetch publish to Node's channels) ----
+// fetch: an http.request client span (component fetch), the trace headers added to the request; node:http's client:
+// the same (component http); node:http's server (http.createServer, not Nest, which instruments itself): a web.request
+// server span, active during the handler, its parent from the request's headers. As dd-trace: a client span fails on
+// 4xx, a server span on 5xx.
+
+let httpHooked = false;
+
+function clientSpan(component: string, method: string, url: string, host: string): ApmSpan | null {
+  const o = new ApmSpanOptions();
+  o.kind = "client";
+  o.type = "http";
+  o.component = component;
+  o.resource = method;
+  const s = startSpan("http.request", o);
+  if (s === null) return null;
+  s.setText("http.method", method);
+  s.setText("http.url", url);
+  s.setText("out.host", host);
+  return s;
+}
+function endClient(s: ApmSpan | null, status: int, err: Error | null): void {
+  if (s === null) return;
+  if (err !== null) s.setError(err);
+  else {
+    s.setText("http.status_code", String(status));
+    if (status >= 400 && status < 500) s.error = true;
+  }
+  s.finish();
+}
+
+function instrumentHttp(): void {
+  if (httpHooked) return;
+  httpHooked = true;
+  dc.subscribe("undici:request:create", (msg: any): void => {
+    if (Apm.untracedNext) {
+      Apm.untracedNext = false;
+      return;
+    }
+    const req = msg.request;
+    const origin: string = req.origin;
+    const path: string = req.path;
+    const method: string = req.method;
+    const hostPort = origin.replace("http://", "").replace("https://", "").split(":");
+    const host = hostPort[0];
+    const s = clientSpan("fetch", method, origin + path.split("?")[0], host);
+    if (s === null) return;
+    const port = hostPort.length > 1 ? Number(hostPort[1]) : origin.startsWith("https:") ? 443 : 80;
+    s.setNumber("network.destination.port", port);
+    const h = new Map<string, string>();
+    inject(s, h);
+    for (const k of h.keys()) req.addHeader(k, h.get(k) ?? "");
+    req.context = s;
+  });
+  dc.subscribe("undici:request:headers", (msg: any): void => {
+    const sp: any = msg.request.context;
+    if (sp === null) return;
+    endClient(sp as ApmSpan, Math.trunc(msg.response.statusCode as number), null);
+  });
+  dc.subscribe("undici:request:error", (msg: any): void => {
+    const sp: any = msg.request.context;
+    if (sp === null) return;
+    endClient(sp as ApmSpan, 0, msg.error as Error);
+  });
+  dc.subscribe("http.client.request.start", (msg: any): void => {
+    const req = msg.request;
+    const method: string = req.method;
+    const host: string = req.host;
+    const path: string = req.path;
+    const protocol: string = req.protocol;
+    const port: string = req.port;
+    const s = clientSpan("http", method, `${protocol}//${host}${port.length > 0 ? ":" + port : ""}${path.split("?")[0]}`, host);
+    if (s === null) return;
+    s.setNumber("network.destination.port", port.length > 0 ? Number(port) : protocol === "https:" ? 443 : 80);
+    const h = new Map<string, string>();
+    inject(s, h);
+    for (const k of h.keys()) req.setHeader(k, h.get(k) ?? "");
+    req._diag = s;
+  });
+  dc.subscribe("http.client.response.finish", (msg: any): void => {
+    const sp: any = msg.request._diag;
+    if (sp === null) return;
+    endClient(sp as ApmSpan, Math.trunc(msg.response.statusCode as number), null);
+  });
+  dc.subscribe("http.client.request.error", (msg: any): void => {
+    const sp: any = msg.request._diag;
+    if (sp === null) return;
+    endClient(sp as ApmSpan, 0, msg.error as Error);
+  });
+  dc.subscribe("http.server.request.start", (msg: any): void => {
+    const req = msg.request;
+    const headers = req.headers as Record<string, string>;
+    const h = new Map<string, string>();
+    for (const k of Object.keys(headers)) h.set(k.toLowerCase(), headers[k] ?? "");
+    const o = new ApmSpanOptions();
+    o.kind = "server";
+    o.type = "web";
+    o.component = "http";
+    o.root = true;
+    const parent = extract(h);
+    if (parent !== null) {
+      o.root = false;
+      o.remote = parent;
+    }
+    const method: string = req.method;
+    const url: string = req.url;
+    o.resource = method;
+    const s = startSpan("web.request", o);
+    if (s === null) return;
+    s.setText("http.method", method);
+    s.setText("http.url", `http://${h.get("host") ?? "localhost"}${url}`);
+    const ua = h.get("user-agent");
+    if (ua !== null) s.setText("http.useragent", ua);
+    req._diag = s;
+    enterSpan(s); // (the handler runs in this request's task: its spans are children of this one)
+  });
+  dc.subscribe("http.server.response.finish", (msg: any): void => {
+    const sp: any = msg.request._diag;
+    if (sp === null) return;
+    const s = sp as ApmSpan;
+    const status = Math.trunc(msg.response.statusCode as number);
+    s.setText("http.status_code", String(status));
+    if (status >= 500) s.error = true;
+    s.finish();
+  });
 }

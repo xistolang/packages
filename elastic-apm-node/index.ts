@@ -472,6 +472,7 @@ export class ElasticExporter implements ApmExporter {
     const h: Record<string, string> = { "Content-Type": "application/x-ndjson" };
     if (this.auth.length > 0) h["Authorization"] = this.auth;
     try {
+      Apm.skipNextFetch(); // (its own request is not traced, as the agent's)
       await fetch(this.url, { method: "POST", headers: h, body: body });
     } catch (err) {
       // (an APM Server that is down loses this batch, as the agent does)

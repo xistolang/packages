@@ -10,10 +10,12 @@ for line in open(sys.argv[1]):
     for t in o["traces"]:
         spans.extend(t)
 by_id = {s["span_id"]: s for s in spans}
-SKIP_META = {"runtime-id", "_dd.tags.process"}
+SKIP_META = {"runtime-id", "_dd.tags.process", "http.useragent"}  # (the user agent is the client runtime's own)
 SKIP_METRICS = {"process_id"}
 out = []
 for s in spans:
+    if s.get("meta", {}).get("_dd.integration") == "net":
+        continue  # (Node's TCP connection spans: xisto's runtime has no net integration)
     meta = {k: v for k, v in s.get("meta", {}).items() if k not in SKIP_META}
     if "error.stack" in meta:
         meta["error.stack"] = meta["error.stack"].split("\n")[0]

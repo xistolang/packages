@@ -192,7 +192,7 @@ export class AgentExporter implements ApmExporter {
     for (const k of info.tags.keys()) meta.set(k, info.tags.get(k) ?? "");
     if (s.kind !== "internal") meta.set("span.kind", s.kind); // (dd-trace tags every span but internal ones)
     for (const k of s.tags.keys()) meta.set(k, s.tags.get(k) ?? "");
-    if (s.error) {
+    if (s.error && (s.errorMessage.length > 0 || s.errorType.length > 0)) {
       meta.set("error.message", s.errorMessage);
       meta.set("error.type", s.errorType);
       if (s.errorStack.length > 0) meta.set("error.stack", s.errorStack);
@@ -201,12 +201,12 @@ export class AgentExporter implements ApmExporter {
     metrics.set("process_id", this.pid);
     metrics.set("_sampling_priority_v1", s.trace.priority);
     if (s.measured || s.component.length > 0) metrics.set("_dd.measured", 1);
-    if (s.parent === null) metrics.set("_dd.top_level", 1); // (dd-trace 5 marks the local root only)
+    if (s.parentId.length === 0) metrics.set("_dd.top_level", 1); // (dd-trace 5 marks the trace's root only)
     if (first) {
       meta.set("_dd.p.dm", "-0");
       if (s.trace.hi !== "0000000000000000") meta.set("_dd.p.tid", s.trace.hi);
       meta.set("_dd.sdk.otlp_export", "false");
-      metrics.set("_dd.agent_psr", 1);
+      if (s.parentId.length === 0) metrics.set("_dd.agent_psr", 1);
       if (s.trace.user.size > 0) {
         meta.set("_dd.appsec.user.collection_mode", "sdk");
         for (const k of s.trace.user.keys()) meta.set(`usr.${k}`, s.trace.user.get(k) ?? "");
@@ -233,6 +233,7 @@ export class AgentExporter implements ApmExporter {
     }
     const body = `[${parts.join(",")}]`;
     try {
+      Apm.skipNextFetch(); // (its own request is not traced, as dd-trace's)
       await fetch("http://" + this.url.slice(7), {
         method: "PUT",
         headers: {

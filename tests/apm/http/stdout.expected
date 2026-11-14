@@ -1,0 +1,3 @@
+fetch 200 ok
+fetch 404 ok
+http.get 200

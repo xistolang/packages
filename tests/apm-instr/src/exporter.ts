@@ -20,10 +20,14 @@ function line(s: ApmSpan, depth: int, out: string[]): void {
   keys.sort();
   for (const k of keys) {
     const t = s.tags.get(k);
-    out.push(`${pad}  ${k}=${t !== null ? t : String(s.nums.get(k))}`);
+    let v = t !== null ? t : String(s.nums.get(k));
+    if (k === "network.destination.port" && s.type === "http") v = "<port>";
+    if (k === "http.url" && s.type === "http") v = v.replace(/:\d+\//, ":<port>/");
+    out.push(`${pad}  ${k}=${v}`);
   }
   if (showIds) out.push(`${pad}  #trace=${s.traceIdHex()} #span=${s.ddSpanId()} #hex=${s.spanIdHex()}`);
-  if (s.error) out.push(`${pad}  error: ${s.errorType}: ${s.errorMessage.split("\n")[0]}`);
+  if (s.error && s.errorType === "" && s.errorMessage === "") out.push(`${pad}  error`);
+  else if (s.error) out.push(`${pad}  error: ${s.errorType}: ${s.errorMessage.split("\n")[0]}`);
 }
 
 function tree(spans: ApmSpan[], parent: ApmSpan | null, depth: int, out: string[]): void {

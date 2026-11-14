@@ -22,7 +22,7 @@ declare function text(raw: string): string;
 declare function ndjson(raw: string): string;
 declare function encode(s: string, path: boolean): string;
 
-import { ApmSpanOptions, enabled, newSpan } from "xisto-apm";
+import { ApmSpanOptions, enabled, newSpan, runIn } from "xisto-apm";
 
 export interface BasicAuth {
   username?: string;
@@ -207,7 +207,8 @@ class Transport {
     span.setText("elasticsearch.method", method);
     if (body.length > 0) span.setText("elasticsearch.body", body);
     try {
-      const r = await this.requestRaw(method, path, body, ndjsonBody, options);
+      // (active during the request: the fetch's http.request spans are its children, as with dd-trace)
+      const r = await runIn(span, () => this.requestRaw(method, path, body, ndjsonBody, options));
       span.finish();
       return r;
     } catch (e) {
