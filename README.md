@@ -34,6 +34,7 @@ xisto build --pkgs ~/src/packages -o app src/main.ts   # or straight from a chec
 | `@nestjs/swagger` | `@nestjs/swagger` ^7 |
 | `@nestjs/throttler` | `@nestjs/throttler` ^6 |
 | `@nestjs/typeorm` | `@nestjs/typeorm` ^10 |
+| `appdynamics` | `appdynamics` ^24, ^25 or ^26 (API; traces to AppDynamics' OTLP ingest) |
 | `argon2` | `argon2` ^0.41 |
 | `class-transformer` | `class-transformer` ^0.5 |
 | `class-validator` | `class-validator` ^0.14 |
@@ -68,6 +69,10 @@ agents do, so the packages that an agent instruments (`@nestjs/core`, `express`,
 `redis`, `ioredis`, `@elastic/elasticsearch`, the pino loggers) call `xisto-apm`'s hooks themselves. With no agent
 started, each hook costs one boolean test. `dd-trace` sends to the Datadog Agent (`/v0.4/traces`), and its spans
 carry the same names and tags as the real dd-trace's: `tests/apm/dd` compares them with dd-trace 5.131.1 on Node.
+`elastic-apm-node` sends to the APM Server's intake v2 (`tests/apm/elastic` compares the events with those of
+elastic-apm-node 4.18.0 on Node). `newrelic`, `@dynatrace/oneagent`/`@dynatrace/oneagent-sdk` and `appdynamics`
+keep their npm APIs and send OTLP/HTTP JSON to each vendor's OpenTelemetry entry (their agents' own protocols are
+closed); each package's `index.ts` header lists its endpoint, settings and differences.
 
 ## Tests
 

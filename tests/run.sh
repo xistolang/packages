@@ -62,6 +62,7 @@ apm-dd tests/apm/dd/run.sh ^ok:
 apm-elastic tests/apm/elastic/run.sh ^ok:.elastic-apm-node
 apm-newrelic tests/apm/newrelic/run.sh ^ok:.newrelic
 apm-dynatrace tests/apm/dynatrace/run.sh ^ok:.dynatrace
+apm-appdynamics tests/apm/appdynamics/run.sh ^ok:.appdynamics
 nest-forms examples/nest-forms/test/run.sh ^ok:.nest-forms
 conduit -
 "
