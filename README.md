@@ -37,6 +37,7 @@ xisto build --pkgs ~/src/packages -o app src/main.ts   # or straight from a chec
 | `class-validator` | `class-validator` ^0.14 |
 | `compression` | `compression` ^1 |
 | `dd-trace` | `dd-trace` ^5 (traces to the Datadog Agent; see APM below) |
+| `elastic-apm-node` | `elastic-apm-node` ^4 (manual API; intake v2 exporter) |
 | `exceljs` | `exceljs` ^4 |
 | `express` | `@types/express` ^4 (the Express API) |
 | `helmet` | `helmet` ^7 |

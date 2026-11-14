@@ -60,6 +60,7 @@ nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth
 apm-dd tests/apm/dd/run.sh ^ok:
 nest-forms examples/nest-forms/test/run.sh ^ok:.nest-forms
+apm-elastic tests/apm/elastic/run.sh ^ok:.elastic-apm-node
 conduit -
 "
 pass=0; fail=0; skip=0; partial=0

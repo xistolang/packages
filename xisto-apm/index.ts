@@ -309,6 +309,13 @@ export function startSpan(name: string, options: ApmSpanOptions | null = null): 
   return span;
 }
 
+/** Makes span the active one for the rest of the current execution and what it starts (null: none), as Elastic's
+ * startTransaction()/startSpan() do. */
+export function enterSpan(span: ApmSpan | null): void {
+  if (span === null) store.disable();
+  else store.enterWith(span);
+}
+
 /** Runs fn with span active (the asynchronous flow it starts too); its value returned. */
 export function runIn<T>(span: ApmSpan | null, fn: () => T): T {
   if (span === null) return fn();
