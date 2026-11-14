@@ -36,7 +36,7 @@ xisto build --pkgs ~/src/packages -o app src/main.ts   # or straight from a chec
 | `class-transformer` | `class-transformer` ^0.5 |
 | `class-validator` | `class-validator` ^0.14 |
 | `compression` | `compression` ^1 |
-| `dd-trace` | `dd-trace` ^5 |
+| `dd-trace` | `dd-trace` ^5 (traces to the Datadog Agent; see APM below) |
 | `exceljs` | `exceljs` ^4 |
 | `express` | `@types/express` ^4 (the Express API) |
 | `helmet` | `helmet` ^7 |
@@ -55,6 +55,15 @@ xisto build --pkgs ~/src/packages -o app src/main.ts   # or straight from a chec
 | `rxjs` | `rxjs` ^7 |
 | `slug` | `slug` ^1 |
 | `typeorm` | `typeorm` ^0.3 |
+| `xisto-apm` | (xisto's own: the tracing core of the APM packages, and the hooks the other packages call) |
+
+## APM
+
+`dd-trace` and the other APM agents build on `xisto-apm`. A native binary cannot patch modules at run time as Node's
+agents do, so the packages that an agent instruments (`@nestjs/core`, `express`, `pg`, `oracledb`, `mongodb`,
+`redis`, `ioredis`, `@elastic/elasticsearch`, the pino loggers) call `xisto-apm`'s hooks themselves. With no agent
+started, each hook costs one boolean test. `dd-trace` sends to the Datadog Agent (`/v0.4/traces`), and its spans
+carry the same names and tags as the real dd-trace's: `tests/apm/dd` compares them with dd-trace 5.131.1 on Node.
 
 ## Tests
 

@@ -58,6 +58,7 @@ ioredis tests/ioredis/run.sh
 nest-features examples/nest-features/test/run.sh ^ok:.nest-features
 nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth
+apm-dd tests/apm/dd/run.sh ^ok:
 nest-forms examples/nest-forms/test/run.sh ^ok:.nest-forms
 conduit -
 "

@@ -450,7 +450,7 @@ export function localRoot(span: ApmSpan): ApmSpan {
 
 /** a time in nanoseconds as integer digits */
 export function nsText(ns: number): string {
-  return Math.trunc(ns).toFixed(0);
+  return ns.toFixed(0); // (no int on the way: past 2^53 an int stops)
 }
 function otlpKind(kind: string): int {
   return kind === "server" ? 2 : kind === "client" ? 3 : kind === "producer" ? 4 : kind === "consumer" ? 5 : 1;

@@ -30,7 +30,7 @@ tracer.trace("checkout", { resource: "POST /checkout", type: "web", tags: { "cus
 async function job(): Promise<void> {
   await tracer.trace("nightly.job", { resource: "rebuild-index" }, async () => {
     await sleep(5);
-    tracer.trace("job.step", () => {});
+    tracer.trace("job.step", {}, () => {});
   });
 }
 
@@ -41,7 +41,7 @@ parent.setTag("error", new Error("payment declined"));
 parent.finish();
 
 try {
-  tracer.trace("boom", () => {
+  tracer.trace("boom", {}, () => {
     throw new Error("bad thing");
   });
 } catch (err) {
