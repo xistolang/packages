@@ -48,6 +48,7 @@ xisto build --pkgs ~/src/packages -o app src/main.ts   # or straight from a chec
 | `mongodb` | `mongodb` ^6, `bson` ^6 |
 | `mongoose` | `mongoose` ^8 |
 | `nestjs-pino` | `nestjs-pino` ^4 |
+| `newrelic` | `newrelic` ^12 or ^14 (API; traces to New Relic's OTLP entry) |
 | `oracledb` | `oracledb` ^6 (thin mode) |
 | `passport-jwt` | `passport-jwt` ^4 |
 | `pg` | `pg` ^8 |

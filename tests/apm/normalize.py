@@ -111,10 +111,11 @@ def otlp():
         check(HEX16.match(s["spanId"]) is not None, "spanId")
         st, en = int(s.pop("startTimeUnixNano")), int(s.pop("endTimeUnixNano"))
         check(st > 1.6e18 and en >= st, "span times")
-        s["traceId"] = names.get(s["traceId"], "<remote trace>")
+        # (an id that is not one of these spans' comes from the test's own headers: kept)
+        s["traceId"] = names.get(s["traceId"], s["traceId"])
         s["spanId"] = names[s["spanId"]]
         if s.get("parentSpanId"):
-            s["parentSpanId"] = names.get(s["parentSpanId"], "<remote parent>")
+            s["parentSpanId"] = names.get(s["parentSpanId"], s["parentSpanId"])
         s["attributes"] = attrs(s.get("attributes", []))
         for ev in s.get("events", []):
             check(int(ev.pop("timeUnixNano")) >= st, "event time")

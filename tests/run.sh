@@ -59,8 +59,9 @@ nest-features examples/nest-features/test/run.sh ^ok:.nest-features
 nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth
 apm-dd tests/apm/dd/run.sh ^ok:
-nest-forms examples/nest-forms/test/run.sh ^ok:.nest-forms
 apm-elastic tests/apm/elastic/run.sh ^ok:.elastic-apm-node
+apm-newrelic tests/apm/newrelic/run.sh ^ok:.newrelic
+nest-forms examples/nest-forms/test/run.sh ^ok:.nest-forms
 conduit -
 "
 pass=0; fail=0; skip=0; partial=0
