@@ -1,0 +1,76 @@
+{"content_type": "multipart/form-data", "event_part": {"content_type": "application/json", "filename": "event.json"}, "headers": {"dd-evp-origin": "dd-trace-js", "dd-evp-origin-version": "5.131.1"}, "path": "/profiling/v1/input"}
+{
+ "attachments": "<attachments>",
+ "end": "<time>",
+ "endpoint_counts": {},
+ "family": "node",
+ "info": {
+  "application": {
+   "env": "test",
+   "service": "prof-app",
+   "start_time": "<time>",
+   "version": "1.2.3"
+  },
+  "platform": {
+   "kernel_name": "<kernel_name>",
+   "kernel_release": "<kernel_release>",
+   "kernel_version": "<kernel_version>"
+  },
+  "profiler": {
+   "activation": "manual",
+   "hasMissingSourceMaps": false,
+   "serverless": false,
+   "settings": {
+    "allocationProfilingEnabled": "<value>",
+    "asyncContextFrameEnabled": "<value>",
+    "codeHotspotsEnabled": "<value>",
+    "cpuProfilingEnabled": "<value>",
+    "debugSourceMaps": "<value>",
+    "endpointCollectionEnabled": "<value>",
+    "heapSamplingInterval": "<value>",
+    "oomMonitoring": {
+     "enabled": "<value>",
+     "exportStrategies": "<value>",
+     "heapLimitExtensionSize": "<value>",
+     "maxHeapExtensionCount": "<value>"
+    },
+    "profilerTypes": "<value>",
+    "sourceMap": "<value>",
+    "timelineEnabled": "<value>",
+    "timelineSamplingEnabled": "<value>",
+    "uploadCompression": {
+     "method": "<value>"
+    },
+    "v8ProfilerBugWorkaroundEnabled": "<value>"
+   },
+   "ssi": {
+    "mechanism": "none"
+   },
+   "version": "5.131.1"
+  },
+  "runtime": {
+   "available_processors": "<n>",
+   "engine": "nodejs",
+   "version": "<version>"
+  }
+ },
+ "process_tags": "<process_tags>",
+ "start": "<time>",
+ "tags_profiler": [
+  "language:javascript",
+  "runtime:nodejs",
+  "runtime_arch:<runtime_arch>",
+  "runtime_os:<runtime_os>",
+  "runtime_version:<runtime_version>",
+  "process_id:<process_id>",
+  "profiler_version:5.131.1",
+  "format:pprof",
+  "service:prof-app",
+  "env:test",
+  "version:1.2.3",
+  "runtime-id:<runtime-id>",
+  "snapshot:periodic",
+  "profile_seq:0"
+ ],
+ "version": "4"
+}

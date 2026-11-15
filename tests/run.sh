@@ -61,6 +61,7 @@ nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth
 apm-dd tests/apm/dd/run.sh ^ok:
 apm-dd-redis tests/apm/dd-redis/run.sh
+apm-dd-profiler tests/apm/dd-profiler/run.sh ^ok:
 apm-http tests/apm/http/run.sh ^ok:
 apm-elastic tests/apm/elastic/run.sh ^ok:.elastic-apm-node
 apm-newrelic tests/apm/newrelic/run.sh ^ok:.newrelic
