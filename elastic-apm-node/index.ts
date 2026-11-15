@@ -41,6 +41,7 @@ import {
   hostName,
   newId,
   nsText,
+  ApmLogs,
 } from "xisto-apm";
 
 /** The options of apm.start() (and their ELASTIC_APM_* variables); the ones marked "accepted" change nothing here. */
@@ -534,6 +535,7 @@ export class Agent {
     const auth = apiKey.length > 0 ? `ApiKey ${apiKey}` : token.length > 0 ? `Bearer ${token}` : "";
     const ex = new ElasticExporter(url + "/intake/v2/events", auth);
     this.exporter = ex;
+    ApmLogs.setEcs(true); // (ecs-pino-format's apmIntegration: the ids on ECS log lines)
     Apm.start(info, ex);
     if (!this.exitHooked) {
       this.exitHooked = true;

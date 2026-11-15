@@ -1,12 +1,13 @@
 // nestjs-pino for xisto: LoggerModule.forRoot() provides a Logger that writes pino's JSON lines, and once it is
 // built every Nest Logger line goes through it too (what app.useLogger(app.get(Logger)) does in Nest).
-// APM: with an agent started (xisto-apm) and a span active, each line carries the trace as dd-trace's logInjection
-// puts it ("dd":{"trace_id","span_id","service","version","env"}) and, on ECS lines, as Elastic's agent does
-// ("trace.id", "transaction.id", "span.id").
+// APM (logs in context), with an agent started (xisto-apm): dd-trace's logInjection puts "dd":{"trace_id","span_id",
+// "service","version","env"} at the end of each line; New Relic's local decorating appends " NR-LINKING|..." to the
+// message and its forwarding sends each line (OTLP logs, with the active span's ids); with the Elastic agent, ECS
+// lines carry "trace.id", "transaction.id" and "span.id".
 import { __overrideLogger, __overrideLoggerFields, DynamicModule, Injectable, LoggerFieldsSink, LoggerService, Module } from "@nestjs/common";
 import { hostname } from "xisto:os";
 import { ClassInfo } from "xisto:reflect";
-import { Apm, activeSpan, enabled, logIds } from "xisto-apm";
+import { decorateLogMessage, ddLogField, ecsLogIds, enabled, forwardLog, forwardingLogs } from "xisto-apm";
 
 /** pino's numeric levels. */
 const LEVELS: Map<string, int> = new Map<string, int>([
@@ -97,7 +98,7 @@ function jsonFields(json: string): string {
   return "," + t.slice(1, t.length - 1);
 }
 
-function ecsLine(level: string, message: string | null, context: string, extra: string): string {
+function ecsLine(level: string, message: string | null, context: string, extra: string, tail: string): string {
   let line = `{"log.level":${JSON.stringify(LABELS.get(level) ?? "info")},"@timestamp":${JSON.stringify(new Date().toISOString())}`;
   line += `,"process.pid":${process.pid},"host.hostname":${JSON.stringify(hostname())},"ecs.version":${JSON.stringify(state.ecsVersion)}`;
   if (state.serviceName.length > 0) {
@@ -106,27 +107,11 @@ function ecsLine(level: string, message: string | null, context: string, extra: 
   if (context.length > 0) {
     line += `,${JSON.stringify(state.contextKey)}:${JSON.stringify(context)}`;
   }
-  return line + extra + (message === null ? "}" : `,"message":${JSON.stringify(message)}}`);
+  return line + extra + (message === null ? "" : `,"message":${JSON.stringify(message)}`) + tail + "}";
 }
 
-// the active span's ids as ',"k":v' pairs (none without one): dd-trace 5's "dd" (the 128-bit trace id in hex when
-// the trace has one, else the low 64 bits in decimal; the span id in decimal) and, for ECS, Elastic's ids
-function correlation(ecs: boolean): string {
-  const span = activeSpan();
-  if (span === null) return "";
-  const ids = logIds();
-  const traceId = span.trace.hi !== "0000000000000000" ? ids.traceId : ids.ddTraceId;
-  let dd = `"trace_id":${JSON.stringify(traceId)},"span_id":${JSON.stringify(ids.ddSpanId)}`;
-  const info = Apm.info;
-  if (info.service.length > 0) dd += `,"service":${JSON.stringify(info.service)}`;
-  if (info.version.length > 0) dd += `,"version":${JSON.stringify(info.version)}`;
-  if (info.env.length > 0) dd += `,"env":${JSON.stringify(info.env)}`;
-  let out = `,"dd":{${dd}}`;
-  if (ecs) {
-    out += `,"trace.id":${JSON.stringify(ids.traceId)},"transaction.id":${JSON.stringify(ids.transactionId)}`;
-    if (ids.spanId !== ids.transactionId) out += `,"span.id":${JSON.stringify(ids.spanId)}`;
-  }
-  return out;
+function pinoHostname(): string {
+  return process.env.get("HOSTNAME") ?? "localhost";
 }
 
 function write(level: string, message: string, context: string, fields: Record<string, unknown> | null = null): void {
@@ -140,26 +125,38 @@ function writeLine(level: string, message: string | null, context: string, extra
   if (n < state.min) {
     return;
   }
+  const ecs = state.ecsVersion.length > 0;
+  let tail = ""; // (dd-trace adds its field at the end of the line pino made)
   if (enabled()) {
-    const corr = correlation(state.ecsVersion.length > 0);
-    if (corr.length > 0) {
-      extra += corr;
-      withFields = true;
+    if (message !== null) {
+      message = decorateLogMessage(message);
+    }
+    if (ecs) {
+      extra += ecsLogIds();
+    }
+    tail = ddLogField();
+    if (forwardingLogs()) {
+      // the line's fields, as the agent forwards them (the message and the level go apart)
+      let f = ecs ? `{"process.pid":${process.pid},"host.hostname":${JSON.stringify(hostname())}` : `{"pid":${process.pid},"hostname":${JSON.stringify(pinoHostname())}`;
+      if (context.length > 0) {
+        f += `,${JSON.stringify(ecs ? state.contextKey : "context")}:${JSON.stringify(context)}`;
+      }
+      forwardLog(LABELS.get(level) ?? "info", message ?? "", f + extra + "}");
     }
   }
-  if (state.ecsVersion.length > 0) {
-    console.log(ecsLine(level, message, context, extra));
+  if (ecs) {
+    console.log(ecsLine(level, message, context, extra, tail));
     return;
   }
-  if (withFields || message === null) { // pino's line with the call's fields before msg
-    let text = `{"level":${n},"time":${Date.now()},"pid":${process.pid},"hostname":${JSON.stringify(process.env.get("HOSTNAME") ?? "localhost")}`;
+  if (withFields || message === null || tail.length > 0) { // pino's line with the call's fields before msg
+    let text = `{"level":${n},"time":${Date.now()},"pid":${process.pid},"hostname":${JSON.stringify(pinoHostname())}`;
     if (context.length > 0) {
       text += `,"context":${JSON.stringify(context)}`;
     }
-    console.log(text + extra + (message === null ? "}" : `,"msg":${JSON.stringify(message)}}`));
+    console.log(text + extra + (message === null ? "" : `,"msg":${JSON.stringify(message)}`) + tail + "}");
     return;
   }
-  const line: PinoLine = { level: n, time: Date.now(), pid: process.pid, hostname: process.env.get("HOSTNAME") ?? "localhost", msg: message };
+  const line: PinoLine = { level: n, time: Date.now(), pid: process.pid, hostname: pinoHostname(), msg: message };
   if (context.length > 0) {
     line.context = context;
   }

@@ -40,6 +40,8 @@ export class ApmServiceInfo {
   tags: Map<string, string> = new Map<string, string>();
   /** the share of traces kept, 0..1 */
   sampleRate: number = 1;
+  /** new traces get a 128-bit id (dd-trace's DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED); else the high half is 0 */
+  trace128: boolean = true;
 }
 
 /** The spans of one trace in this process. */
@@ -266,7 +268,7 @@ export class Apm {
         // one last send, bounded: a collector that is down or hangs must not hold the end of the program
         if (Apm.exiting) return;
         Apm.exiting = true;
-        if (Apm.pending.length > 0) Apm.flush();
+        if (Apm.pending.length > 0 || ApmLogs.queue.length > 0) Apm.flush();
       });
     }
   }
@@ -309,8 +311,8 @@ export class Apm {
   /** Sends what is queued (a promise that resolves once it is sent). */
   static flush(): Promise<void> {
     const ex = Apm.exporter;
-    // (with an observer, the exporter has metrics to send even when no trace was kept)
-    if (ex === null || Apm.pending.length === 0 && Apm.observer === null) return Promise.resolve();
+    // (with an observer, the exporter has metrics to send even when no trace was kept; forwarded logs go with them)
+    if (ex === null || Apm.pending.length === 0 && Apm.observer === null && ApmLogs.queue.length === 0) return Promise.resolve();
     if (Apm.flushing) {
       // one send at a time: while the collector is slow the queue waits, bounded (the oldest traces go first)
       while (Apm.pendingSpans > Apm.maxQueuedSpans && Apm.pending.length > 0) {
@@ -367,7 +369,7 @@ export function startSpan(name: string, options: ApmSpanOptions | null = null): 
   } else {
     // (the high half as dd-trace makes it: the start's seconds in 32 bits, then zeros)
     const secs = Math.trunc(nowNs() / 1000000000).toString(16);
-    const t = new ApmTrace("00000000".slice(secs.length) + secs + "00000000", randomId());
+    const t = new ApmTrace(Apm.info.trace128 ? "00000000".slice(secs.length) + secs + "00000000" : "0000000000000000", randomId());
     t.priority = Apm.info.sampleRate >= 1 || Math.random() < Apm.info.sampleRate ? 1 : 0;
     span = new ApmSpan(t, randomId(), "", null, name);
   }
@@ -497,6 +499,145 @@ export function logIds(): ApmLogIds {
   while (root.parent !== null && (root.parent as ApmSpan).service === s.service) root = root.parent as ApmSpan;
   ids.transactionId = root.spanIdHex();
   return ids;
+}
+
+// ---- logs in context: what the agent adds to the application's log lines, and the lines it forwards ----
+// The loggers (nestjs-pino) ask here, once per line and only with an agent started: dd-trace's logInjection adds a
+// "dd" object at the end of each JSON line; New Relic's local decorating appends " NR-LINKING|..." to the message and
+// its forwarding queues the line for the exporter (OTLP /v1/logs, with the active span's traceId and spanId); the
+// Elastic agent's ECS fields (trace.id, transaction.id, span.id) go on ECS lines.
+
+/** One forwarded log line: OTLP LogRecord's fields, its attributes as OTLP JSON. */
+export class ApmLogRecord {
+  timeNs: number;
+  /** pino's level label (info, warn...) */
+  level: string;
+  message: string;
+  /** the active span's ids (hex), "" outside a span */
+  traceId: string = "";
+  spanId: string = "";
+  attrs: string[] = [];
+  constructor(timeNs: number, level: string, message: string) {
+    this.timeNs = timeNs;
+    this.level = level;
+    this.message = message;
+  }
+}
+
+/** The log settings the agent started with. */
+export class ApmLogs {
+  /** dd-trace's logInjection (DD_LOGS_INJECTION) */
+  static ddInjection: boolean = false;
+  /** dd.trace_id as the 128-bit id in hex when the trace has a high half (DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED);
+   * else the low 64 bits in decimal */
+  static dd128: boolean = true;
+  /** New Relic's application_logging.local_decorating */
+  static nrDecorating: boolean = false;
+  /** the Elastic agent's ids on ECS lines */
+  static ecsIds: boolean = false;
+  /** lines are queued for the exporter (New Relic's application_logging.forwarding) */
+  static forwarding: boolean = false;
+  /** at most this many lines wait between two sends; the newest are dropped past it */
+  static maxQueued: int = 10000;
+  static queue: ApmLogRecord[] = [];
+  static dropped: int = 0;
+  // (the agents set these through the methods: a static is read-only outside its class's module)
+  /** dd-trace's settings */
+  static setDatadog(injection: boolean, logs128: boolean): void {
+    ApmLogs.ddInjection = injection;
+    ApmLogs.dd128 = logs128;
+  }
+  /** New Relic's application_logging settings */
+  static setNewRelic(forwarding: boolean, decorating: boolean, maxQueued: int): void {
+    ApmLogs.forwarding = forwarding;
+    ApmLogs.nrDecorating = decorating;
+    ApmLogs.maxQueued = maxQueued;
+  }
+  /** the Elastic agent's ECS ids */
+  static setEcs(on: boolean): void {
+    ApmLogs.ecsIds = on;
+  }
+  /** The queued lines, and an empty queue. */
+  static take(): ApmLogRecord[] {
+    const q = ApmLogs.queue;
+    ApmLogs.queue = [];
+    return q;
+  }
+}
+
+/** dd-trace's "dd" field as ',"dd":{...}' (trace_id and span_id of the active span, then service, version and env), or
+ * "" when log injection is off or there is nothing to put in it. */
+export function ddLogField(): string {
+  if (!Apm.on || !ApmLogs.ddInjection) return "";
+  const parts: string[] = [];
+  const s = store.getStore();
+  if (s !== null) {
+    const traceId = ApmLogs.dd128 && s.trace.hi !== "0000000000000000" ? s.traceIdHex() : s.ddTraceId();
+    parts.push(`"trace_id":${JSON.stringify(traceId)}`);
+    parts.push(`"span_id":${JSON.stringify(s.ddSpanId())}`);
+  }
+  const info = Apm.info;
+  if (info.service.length > 0) parts.push(`"service":${JSON.stringify(info.service)}`);
+  if (info.version.length > 0) parts.push(`"version":${JSON.stringify(info.version)}`);
+  if (info.env.length > 0) parts.push(`"env":${JSON.stringify(info.env)}`);
+  return parts.length === 0 ? "" : `,"dd":{${parts.join(",")}}`;
+}
+
+/** New Relic's local decorating: the message with " NR-LINKING|entity.guid|hostname|trace.id|span.id|entity.name|"
+ * appended (the entity guid is the collector's, never known here: empty), or the message as is when it is off. */
+export function decorateLogMessage(message: string): string {
+  if (!Apm.on || !ApmLogs.nrDecorating) return message;
+  const s = store.getStore();
+  const traceId = s === null ? "" : s.traceIdHex();
+  const spanId = s === null ? "" : s.spanIdHex();
+  return `${message} NR-LINKING||${Apm.info.hostname}|${traceId}|${spanId}|${encodeURIComponent(Apm.info.service)}|`;
+}
+
+/** The Elastic agent's ids for an ECS line as ',"k":v' pairs: trace.id, transaction.id and, inside a span of the
+ * transaction, span.id; "" when that agent is not running or no span is active. */
+export function ecsLogIds(): string {
+  if (!Apm.on || !ApmLogs.ecsIds) return "";
+  if (store.getStore() === null) return "";
+  const ids = logIds();
+  let out = `,"trace.id":${JSON.stringify(ids.traceId)},"transaction.id":${JSON.stringify(ids.transactionId)}`;
+  if (ids.spanId !== ids.transactionId) out += `,"span.id":${JSON.stringify(ids.spanId)}`;
+  return out;
+}
+
+/** True when the agent forwards log lines (the logger then calls forwardLog for each line it writes). */
+export function forwardingLogs(): boolean {
+  return Apm.on && ApmLogs.forwarding;
+}
+
+/** Queues a log line for the exporter, with the active span's ids. fields: the line's other fields as a JSON object
+ * text ('{"pid":1,"context":"Users"}'; "" for none), sent as attributes. */
+export function forwardLog(level: string, message: string, fields: string): void {
+  if (!Apm.on || !ApmLogs.forwarding) return;
+  if (ApmLogs.queue.length >= ApmLogs.maxQueued) {
+    ApmLogs.dropped++;
+    return;
+  }
+  const r = new ApmLogRecord(nowNs(), level, message);
+  const s = store.getStore();
+  if (s !== null) {
+    r.traceId = s.traceIdHex();
+    r.spanId = s.spanIdHex();
+  }
+  if (fields.length > 2) {
+    try {
+      const obj = JSON.parse(fields) as Record<string, unknown>;
+      for (const k of Object.keys(obj)) {
+        const v = obj[k];
+        if (typeof v === "string") r.attrs.push(attr(k, v as string));
+        else if (typeof v === "number") r.attrs.push(attrNum(k, v as number));
+        else if (typeof v === "boolean") r.attrs.push(`{"key":${JSON.stringify(k)},"value":{"boolValue":${v ? "true" : "false"}}}`);
+        else if (v !== null && v !== undefined) r.attrs.push(attr(k, JSON.stringify(v)));
+      }
+    } catch (err) {
+      // (not JSON: the line goes without its fields)
+    }
+  }
+  ApmLogs.queue.push(r);
 }
 
 // the same as startSpan/extract/inject under names an agent package can import while it exports its own
@@ -654,6 +795,13 @@ function otelAttrs(s: ApmSpan): string[] {
     if (dbName.length > 0) out.push(attr("db.namespace", dbName));
   }
   return out;
+}
+
+/** OTLP's SeverityNumber of a level label (TRACE 1, DEBUG 5, INFO 9, WARN 13, ERROR 17, FATAL 21; any other 0,
+ * unspecified). */
+function severityOf(label: string): int {
+  const l = label.toLowerCase();
+  return l === "trace" ? 1 : l === "debug" ? 5 : l === "info" ? 9 : l === "warn" || l === "warning" ? 13 : l === "error" ? 17 : l === "fatal" ? 21 : 0;
 }
 
 /** One histogram series of a metric: its attributes and its buckets for the current window (delta temporality). */
@@ -890,6 +1038,20 @@ export class ApmOtlpExporter implements ApmExporter {
     }
     return `{"resourceSpans":[{"resource":{"attributes":[${this.resourceJson()}]},"scopeSpans":[{"scope":{"name":"xisto-apm","version":"0.1.0"},"spans":[${spans.join(",")}]}]}]}`;
   }
+  /** The OTLP logs request body of these lines: each LogRecord with its time, severity (pino's level), body, the
+   * active span's traceId and spanId, and the line's fields as attributes. */
+  logsBody(logs: ApmLogRecord[]): string {
+    const recs: string[] = [];
+    for (const r of logs) {
+      const t = nsText(r.timeNs);
+      const ids = r.traceId.length > 0 ? `,"traceId":"${r.traceId}","spanId":"${r.spanId}"` : "";
+      recs.push(
+        `{"timeUnixNano":"${t}","observedTimeUnixNano":"${t}","severityNumber":${severityOf(r.level)},"severityText":${JSON.stringify(r.level)},` +
+          `"body":{"stringValue":${JSON.stringify(r.message)}},"attributes":[${r.attrs.join(",")}]${ids}}`,
+      );
+    }
+    return `{"resourceLogs":[{"resource":{"attributes":[${this.resourceJson()}]},"scopeLogs":[{"scope":{"name":"xisto-apm","version":"0.1.0"},"logRecords":[${recs.join(",")}]}]}]}`;
+  }
   async send(traces: ApmSpan[][]): Promise<void> {
     const h: Record<string, string> = { "Content-Type": "application/json" };
     for (const k of this.headers.keys()) h[k] = this.headers.get(k) ?? "";
@@ -898,6 +1060,11 @@ export class ApmOtlpExporter implements ApmExporter {
     const limit = Apm.timeoutMs();
     const t0 = Date.now();
     if (traces.length > 0) await this.post(this.url, h, this.body(traces), limit);
+    const logs = ApmLogs.take();
+    if (logs.length > 0) {
+      const left = limit - (Date.now() - t0);
+      if (left >= 50) await this.post(this.url.replace(/\/v1\/traces$/, "/v1/logs"), h, this.logsBody(logs), Math.trunc(left));
+    }
     const m = this.metrics;
     if (m !== null) {
       const mb = (m as ApmOtlpMetrics).take(this.resourceJson());
