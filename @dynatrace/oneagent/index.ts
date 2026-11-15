@@ -20,7 +20,8 @@
 // - Call it as `oneagent(options)` after `import oneagent from "@dynatrace/oneagent"`; xisto reads a top-level
 //   `require("@dynatrace/oneagent")` as `import * as`, whose `start(options)` does the same. It returns true when
 //   tracing is on (the npm package's call returns the agent's exports).
-import { Apm, ApmOtlpExporter, ApmServiceInfo, hostName } from "xisto-apm";
+import { Apm, ApmServiceInfo, hostName } from "xisto-apm";
+import { ApmOtlpExporter } from "xisto-apm/otlp";
 
 /** The options of the npm package's call (the ones used here; the others are accepted). */
 export interface OneAgentOptions {

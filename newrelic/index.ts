@@ -50,7 +50,6 @@
 import {
   Apm,
   ApmLogs,
-  ApmOtlpExporter,
   forwardLog,
   spanBudgetSampler,
   ApmServiceInfo,
@@ -63,6 +62,7 @@ import {
   localRoot,
   hostName,
 } from "xisto-apm";
+import { ApmOtlpExporter } from "xisto-apm/otlp";
 
 /** What a transaction keeps beside its span: whether the code took it over (getTransaction: ended by hand). */
 export class TransactionState {
