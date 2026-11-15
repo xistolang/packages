@@ -235,13 +235,18 @@ export class AgentExporter implements ApmExporter {
       `"duration":${nsText(s.durationNs)},"error":${s.error ? 1 : 0},"meta":{${m.join(",")}},"metrics":{${n.join(",")}}}`
     );
   }
+  /** One trace's JSON, encoded when the trace ends (Apm.setEncoder), as dd-trace's encoder does. */
+  encode(t: ApmSpan[]): string {
+    const spans: string[] = [];
+    for (let i = 0; i < t.length; i++) spans.push(this.span(t[i], i === 0));
+    return `[${spans.join(",")}]`;
+  }
   async send(traces: ApmSpan[][]): Promise<void> {
     const parts: string[] = [];
-    for (const t of traces) {
-      const spans: string[] = [];
-      for (let i = 0; i < t.length; i++) spans.push(this.span(t[i], i === 0));
-      parts.push(`[${spans.join(",")}]`);
-    }
+    for (const t of traces) parts.push(this.encode(t));
+    await this.sendParts(parts, traces.length);
+  }
+  async sendParts(parts: string[], count: int): Promise<void> {
     const body = `[${parts.join(",")}]`;
     try {
       Apm.skipNextFetch(); // (its own request is not traced, as dd-trace's)
@@ -251,7 +256,7 @@ export class AgentExporter implements ApmExporter {
           "Content-Type": "application/json",
           "Datadog-Meta-Lang": "nodejs",
           "Datadog-Meta-Tracer-Version": "5.131.1",
-          "X-Datadog-Trace-Count": String(traces.length),
+          "X-Datadog-Trace-Count": String(count),
         },
         body: body,
         signal: AbortSignal.timeout(Apm.timeoutMs()),
@@ -294,6 +299,7 @@ export function init(options: TracerOptions = {}): Tracer {
   if (url.endsWith("/")) url = url.slice(0, url.length - 1);
   if (options.flushInterval !== null) Apm.setFlushInterval(Math.trunc(options.flushInterval as number));
   const exporter = new AgentExporter(url + "/v0.4/traces");
+  Apm.setEncoder((t: ApmSpan[]) => exporter.encode(t), (parts: string[], n: int) => exporter.sendParts(parts, n));
   Apm.start(info, exporter);
   const rmEnv = envOr("DD_RUNTIME_METRICS_ENABLED", "false");
   if (options.runtimeMetrics === true || rmEnv === "true" || rmEnv === "1") {

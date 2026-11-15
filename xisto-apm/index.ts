@@ -250,6 +250,17 @@ export class Apm {
   static observer: ((spans: ApmSpan[]) => void) | null = null;
   /** decides, once a trace has ended, whether it is sent (an agent's sampler; null: every kept trace is sent) */
   static keepTrace: ((spans: ApmSpan[]) => boolean) | null = null;
+  /** an exporter that encodes each trace when it ends (dd-trace's way): a flush then only joins the texts, so the
+   * encoding of a whole batch never holds the event loop at once, and the spans are let go of right away */
+  static encodeTrace: ((spans: ApmSpan[]) => string) | null = null;
+  static sendEncoded: ((parts: string[], traces: int) => Promise<void>) | null = null;
+  static pendingText: string[] = [];
+  static pendingTextSpans: int[] = [];
+  /** (the agent sets them through this: a static is read-only outside its class's module) */
+  static setEncoder(encode: ((spans: ApmSpan[]) => string) | null, send: ((parts: string[], traces: int) => Promise<void>) | null): void {
+    Apm.encodeTrace = encode;
+    Apm.sendEncoded = send;
+  }
   /** (the OTLP exporter sets it through this: a static is read-only outside its class's module) */
   static setObserver(f: ((spans: ApmSpan[]) => void) | null): void {
     Apm.observer = f;
@@ -272,7 +283,7 @@ export class Apm {
         // one last send, bounded: a collector that is down or hangs must not hold the end of the program
         if (Apm.exiting) return;
         Apm.exiting = true;
-        if (Apm.pending.length > 0 || ApmLogs.queue.length > 0) Apm.flush();
+        if (Apm.pending.length > 0 || Apm.pendingText.length > 0 || ApmLogs.queue.length > 0) Apm.flush();
       });
     }
   }
@@ -300,8 +311,16 @@ export class Apm {
       t.spans = []; // (the trace and its spans point at each other: let go of them now, not in the cycle collector)
       return;
     }
-    Apm.pending.push(t.spans);
-    Apm.pendingSpans += t.spans.length;
+    const enc = Apm.encodeTrace;
+    if (enc !== null) {
+      Apm.pendingText.push(enc(t.spans));
+      Apm.pendingTextSpans.push(t.spans.length);
+      Apm.pendingSpans += t.spans.length;
+      t.spans = []; // (encoded: the spans are not needed any more)
+    } else {
+      Apm.pending.push(t.spans);
+      Apm.pendingSpans += t.spans.length;
+    }
     if (Apm.pendingSpans >= 1000 && !Apm.flushSoonSet) {
       // (from a timer, not here: a send started inside a request would be part of that request, and a collector
       // that hangs would hold the request's answer)
@@ -316,7 +335,7 @@ export class Apm {
   static flush(): Promise<void> {
     const ex = Apm.exporter;
     // (with an observer, the exporter has metrics to send even when no trace was kept; forwarded logs go with them)
-    if (ex === null || Apm.pending.length === 0 && Apm.observer === null && ApmLogs.queue.length === 0) return Promise.resolve();
+    if (ex === null || Apm.pending.length === 0 && Apm.pendingText.length === 0 && Apm.observer === null && ApmLogs.queue.length === 0) return Promise.resolve();
     if (Apm.flushing) {
       // one send at a time: while the collector is slow the queue waits, bounded (the oldest traces go first)
       while (Apm.pendingSpans > Apm.maxQueuedSpans && Apm.pending.length > 0) {
@@ -327,13 +346,35 @@ export class Apm {
         }
         Apm.dropped++;
       }
+      while (Apm.pendingSpans > Apm.maxQueuedSpans && Apm.pendingText.length > 0) {
+        Apm.pendingText.shift();
+        Apm.pendingSpans -= Apm.pendingTextSpans.shift() ?? 0;
+        Apm.dropped++;
+      }
       return Promise.resolve();
+    }
+    const sendText = Apm.sendEncoded;
+    if (sendText !== null && Apm.pendingText.length > 0) {
+      const parts = Apm.pendingText;
+      Apm.pendingText = [];
+      Apm.pendingTextSpans = [];
+      Apm.pendingSpans = 0;
+      Apm.flushing = true;
+      return Apm.sendTextBatch(sendText, parts);
     }
     const batch = Apm.pending;
     Apm.pending = [];
     Apm.pendingSpans = 0;
     Apm.flushing = true;
     return Apm.sendBatch(ex, batch);
+  }
+  static async sendTextBatch(send: (parts: string[], traces: int) => Promise<void>, parts: string[]): Promise<void> {
+    try {
+      await send(parts, parts.length);
+    } catch (err) {
+      // (the exporters catch their own errors; nothing reaches the program)
+    }
+    Apm.flushing = false;
   }
   static async sendBatch(ex: ApmExporter, batch: ApmSpan[][]): Promise<void> {
     try {
