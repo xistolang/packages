@@ -120,9 +120,18 @@ def make_handler(kind):
     return H
 
 
+class Server(ThreadingHTTPServer):
+    # HTTPServer.server_bind calls socket.getfqdn(): a reverse DNS lookup that takes seconds on some CI machines
+    # (GitHub's macOS runners) and that nothing here needs
+    def server_bind(self):
+        import socketserver
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = "127.0.0.1", self.server_address[1]
+
+
 servers = []
 for kind, port in (("dd", int(sys.argv[2])), ("elastic", int(sys.argv[3])), ("otlp", int(sys.argv[4]))):
-    s = ThreadingHTTPServer(("127.0.0.1", port), make_handler(kind))
+    s = Server(("127.0.0.1", port), make_handler(kind))
     threading.Thread(target=s.serve_forever, daemon=True).start()
     servers.append(s)
 print("ready", flush=True)
