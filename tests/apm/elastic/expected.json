@@ -1,0 +1,201 @@
+{
+ "events": [
+  {
+   "error": {
+    "context": {
+     "custom": {},
+     "tags": {},
+     "user": {}
+    },
+    "exception": {
+     "handled": true,
+     "message": "bad input",
+     "stacktrace": "<frames>",
+     "type": "TypeError"
+    },
+    "id": "<id>",
+    "parent_id": "tx:bad",
+    "trace_id": "trace:bad",
+    "transaction": {
+     "name": "bad",
+     "sampled": true,
+     "type": "task"
+    },
+    "transaction_id": "tx:bad"
+   }
+  },
+  {
+   "error": {
+    "context": {
+     "custom": {},
+     "tags": {},
+     "user": {}
+    },
+    "exception": {
+     "handled": true,
+     "message": "payment declined",
+     "stacktrace": "<frames>",
+     "type": "Error"
+    },
+    "id": "<id>",
+    "parent_id": "tx:POST /checkout",
+    "trace_id": "trace:POST /checkout",
+    "transaction": {
+     "name": "POST /checkout",
+     "sampled": true,
+     "type": "request"
+    },
+    "transaction_id": "tx:POST /checkout"
+   }
+  },
+  {
+   "span": {
+    "action": "query",
+    "context": {
+     "tags": {
+      "rows": "2"
+     }
+    },
+    "id": "span:SELECT * FROM cart",
+    "name": "SELECT * FROM cart",
+    "outcome": "success",
+    "parent_id": "tx:POST /checkout",
+    "sample_rate": 1,
+    "subtype": "postgresql",
+    "sync": true,
+    "trace_id": "trace:POST /checkout",
+    "transaction_id": "tx:POST /checkout",
+    "type": "db"
+   }
+  },
+  {
+   "span": {
+    "action": "write",
+    "id": "span:write",
+    "name": "write",
+    "outcome": "success",
+    "parent_id": "span:rebuild",
+    "sample_rate": 1,
+    "subtype": "fs",
+    "sync": true,
+    "trace_id": "trace:nightly-rebuild",
+    "transaction_id": "tx:nightly-rebuild",
+    "type": "storage"
+   }
+  },
+  {
+   "span": {
+    "action": null,
+    "id": "span:rebuild",
+    "name": "rebuild",
+    "outcome": "success",
+    "parent_id": "tx:nightly-rebuild",
+    "sample_rate": 1,
+    "subtype": null,
+    "sync": false,
+    "trace_id": "trace:nightly-rebuild",
+    "transaction_id": "tx:nightly-rebuild",
+    "type": "app"
+   }
+  },
+  {
+   "transaction": {
+    "context": {
+     "cloud": {},
+     "custom": {
+      "coupon": "X1"
+     },
+     "message": {},
+     "service": {},
+     "tags": {
+      "cart": "3",
+      "region": "eu",
+      "vip": "true"
+     },
+     "user": {
+      "email": "ana@example.com",
+      "id": "42",
+      "username": "ana"
+     }
+    },
+    "id": "tx:POST /checkout",
+    "name": "POST /checkout",
+    "outcome": "success",
+    "result": "HTTP 2xx",
+    "sample_rate": 1,
+    "sampled": true,
+    "span_count": {
+     "started": 1
+    },
+    "trace_id": "trace:POST /checkout",
+    "type": "request"
+   }
+  },
+  {
+   "transaction": {
+    "context": {
+     "cloud": {},
+     "custom": {},
+     "message": {},
+     "service": {},
+     "tags": {},
+     "user": {}
+    },
+    "id": "tx:bad",
+    "name": "bad",
+    "outcome": "unknown",
+    "result": "success",
+    "sample_rate": 1,
+    "sampled": true,
+    "span_count": {
+     "started": 0
+    },
+    "trace_id": "trace:bad",
+    "type": "task"
+   }
+  },
+  {
+   "transaction": {
+    "context": {
+     "cloud": {},
+     "custom": {},
+     "message": {},
+     "service": {},
+     "tags": {},
+     "user": {}
+    },
+    "id": "tx:nightly-rebuild",
+    "name": "nightly-rebuild",
+    "outcome": "failure",
+    "result": "error",
+    "sample_rate": 1,
+    "sampled": true,
+    "span_count": {
+     "started": 2
+    },
+    "trace_id": "trace:nightly-rebuild",
+    "type": "job"
+   }
+  }
+ ],
+ "headers": [
+  "{\"authorization\": \"Bearer s3cret\", \"content-type\": \"application/x-ndjson\"}"
+ ],
+ "metadata": {
+  "service": {
+   "agent": {
+    "name": "nodejs"
+   },
+   "environment": "test",
+   "language": {
+    "name": "javascript"
+   },
+   "name": "shop",
+   "version": "1.2.3"
+  },
+  "system": {
+   "architecture": "arm64",
+   "platform": "darwin"
+  }
+ }
+}

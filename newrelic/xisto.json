@@ -1,0 +1,9 @@
+{
+  "name": "newrelic",
+  "version": "0.1.0",
+  "license": "Apache-2.0 WITH LLVM-exception",
+  "implements": { "newrelic": "^12 || ^14" },
+  "main": "index.ts",
+  "dependencies": { "xisto-apm": "0.1.0" },
+  "needs": ["net"]
+}

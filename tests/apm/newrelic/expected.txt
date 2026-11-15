@@ -1,0 +1,10 @@
+outside: {}
+in web tx: {traceId=<32 hex>, spanId=<16 hex>}
+linking: {trace.id=<32 hex>, span.id=<16 hex>, entity.name=shop, entity.type=SERVICE, hostname=<host>}
+segment: same trace true other span true
+web tx value: 42
+background value: done
+outgoing traceparent: true same trace true
+continued trace: true
+caught: boom
+shut down: true

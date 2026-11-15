@@ -1,8 +1,12 @@
 // nestjs-pino for xisto: LoggerModule.forRoot() provides a Logger that writes pino's JSON lines, and once it is
 // built every Nest Logger line goes through it too (what app.useLogger(app.get(Logger)) does in Nest).
+// APM: with an agent started (xisto-apm) and a span active, each line carries the trace as dd-trace's logInjection
+// puts it ("dd":{"trace_id","span_id","service","version","env"}) and, on ECS lines, as Elastic's agent does
+// ("trace.id", "transaction.id", "span.id").
 import { __overrideLogger, __overrideLoggerFields, DynamicModule, Injectable, LoggerFieldsSink, LoggerService, Module } from "@nestjs/common";
 import { hostname } from "xisto:os";
 import { ClassInfo } from "xisto:reflect";
+import { Apm, activeSpan, enabled, logIds } from "xisto-apm";
 
 /** pino's numeric levels. */
 const LEVELS: Map<string, int> = new Map<string, int>([
@@ -105,6 +109,26 @@ function ecsLine(level: string, message: string | null, context: string, extra: 
   return line + extra + (message === null ? "}" : `,"message":${JSON.stringify(message)}}`);
 }
 
+// the active span's ids as ',"k":v' pairs (none without one): dd-trace 5's "dd" (the 128-bit trace id in hex when
+// the trace has one, else the low 64 bits in decimal; the span id in decimal) and, for ECS, Elastic's ids
+function correlation(ecs: boolean): string {
+  const span = activeSpan();
+  if (span === null) return "";
+  const ids = logIds();
+  const traceId = span.trace.hi !== "0000000000000000" ? ids.traceId : ids.ddTraceId;
+  let dd = `"trace_id":${JSON.stringify(traceId)},"span_id":${JSON.stringify(ids.ddSpanId)}`;
+  const info = Apm.info;
+  if (info.service.length > 0) dd += `,"service":${JSON.stringify(info.service)}`;
+  if (info.version.length > 0) dd += `,"version":${JSON.stringify(info.version)}`;
+  if (info.env.length > 0) dd += `,"env":${JSON.stringify(info.env)}`;
+  let out = `,"dd":{${dd}}`;
+  if (ecs) {
+    out += `,"trace.id":${JSON.stringify(ids.traceId)},"transaction.id":${JSON.stringify(ids.transactionId)}`;
+    if (ids.spanId !== ids.transactionId) out += `,"span.id":${JSON.stringify(ids.spanId)}`;
+  }
+  return out;
+}
+
 function write(level: string, message: string, context: string, fields: Record<string, unknown> | null = null): void {
   writeLine(level, message, context, fieldsText(fields), fields !== null);
 }
@@ -115,6 +139,13 @@ function writeLine(level: string, message: string | null, context: string, extra
   const n = LEVELS.has(level) ? LEVELS.get(level) : 30;
   if (n < state.min) {
     return;
+  }
+  if (enabled()) {
+    const corr = correlation(state.ecsVersion.length > 0);
+    if (corr.length > 0) {
+      extra += corr;
+      withFields = true;
+    }
   }
   if (state.ecsVersion.length > 0) {
     console.log(ecsLine(level, message, context, extra));
