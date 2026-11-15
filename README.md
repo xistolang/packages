@@ -72,7 +72,10 @@ carry the same names and tags as the real dd-trace's: `tests/apm/dd` compares th
 `elastic-apm-node` sends to the APM Server's intake v2 (`tests/apm/elastic` compares the events with those of
 elastic-apm-node 4.18.0 on Node). `newrelic`, `@dynatrace/oneagent`/`@dynatrace/oneagent-sdk` and `appdynamics`
 keep their npm APIs and send OTLP/HTTP JSON to each vendor's OpenTelemetry entry (their agents' own protocols are
-closed); each package's `index.ts` header lists its endpoint, settings and differences.
+closed); each package's `index.ts` header lists its endpoint, settings and differences. Logs in context, on
+`nestjs-pino`'s lines: dd-trace's `logInjection` (`DD_LOGS_INJECTION`, on by default) adds the `dd` object
+(`tests/apm/dd-logs` compares the lines with dd-trace's on Node); New Relic's local decorating adds `NR-LINKING|...` to
+the message and its forwarding sends each line as OTLP logs with the trace and span ids (`tests/apm/newrelic-logs`).
 
 ## Tests
 
