@@ -1,0 +1,24 @@
+== default
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Main","msg":"before any span","dd":{"service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"in checkout","dd":{"trace_id":"hex128:checkout","span_id":"checkout","service":"shop","version":"1.2.3","env":"test"}}
+{"level":40,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"slow query","dd":{"trace_id":"hex128:checkout","span_id":"db.query","service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"back in checkout","dd":{"trace_id":"hex128:checkout","span_id":"checkout","service":"shop","version":"1.2.3","env":"test"}}
+{"level":50,"time":"T","pid":"P","hostname":"H","context":"Job","msg":"after await","dd":{"trace_id":"hex128:nightly.job","span_id":"nightly.job","service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"in step","dd":{"trace_id":"hex128:nightly.job","span_id":"job.step","service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Main","msg":"after the spans","dd":{"service":"shop","version":"1.2.3","env":"test"}}
+== DD_LOGS_INJECTION=false
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Main","msg":"before any span"}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"in checkout"}
+{"level":40,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"slow query"}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"back in checkout"}
+{"level":50,"time":"T","pid":"P","hostname":"H","context":"Job","msg":"after await"}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"in step"}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Main","msg":"after the spans"}
+== DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED=false
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Main","msg":"before any span","dd":{"service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"in checkout","dd":{"trace_id":"dec64:checkout","span_id":"checkout","service":"shop","version":"1.2.3","env":"test"}}
+{"level":40,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"slow query","dd":{"trace_id":"dec64:checkout","span_id":"db.query","service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"back in checkout","dd":{"trace_id":"dec64:checkout","span_id":"checkout","service":"shop","version":"1.2.3","env":"test"}}
+{"level":50,"time":"T","pid":"P","hostname":"H","context":"Job","msg":"after await","dd":{"trace_id":"dec64:nightly.job","span_id":"nightly.job","service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Shop","msg":"in step","dd":{"trace_id":"dec64:nightly.job","span_id":"job.step","service":"shop","version":"1.2.3","env":"test"}}
+{"level":30,"time":"T","pid":"P","hostname":"H","context":"Main","msg":"after the spans","dd":{"service":"shop","version":"1.2.3","env":"test"}}
