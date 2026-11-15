@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-# Fake APM collectors for the tests: a Datadog Agent (PUT/POST /v0.4/traces, msgpack or JSON), an Elastic APM Server
+# Fake APM collectors for the tests: a Datadog Agent (PUT/POST /v0.4/traces, msgpack or JSON; POST /profiling/v1/input
+# and the intake's /api/v2/profile, multipart: recorded as kind "dd-profile" with the event JSON and what each
+# attachment holds), an Elastic APM Server
 # (POST /intake/v2/events, ndjson, gzip or deflate or plain) and an OTLP/HTTP receiver (POST /v1/traces, JSON; also
 # /v1/metrics and /v1/logs, recorded as kind "otlp-metrics" and "otlp-logs").
 # Every payload received is appended, decoded, as one JSON line to OUT ({"kind": "dd" | "elastic" | "otlp", ...}).
@@ -49,6 +51,67 @@ def unpack(data):
         raise ValueError("msgpack type 0x%02x" % c)
 
     return val()
+
+
+def multipart(data, ctype):
+    """the parts of a multipart/form-data body: [(headers dict, content bytes)]"""
+    b = ctype.split("boundary=", 1)[1].strip().strip('"').encode()
+    parts = []
+    for chunk in data.split(b"--" + b)[1:]:
+        if chunk.startswith(b"--"):
+            break
+        head, _, body = chunk.partition(b"\r\n\r\n")
+        hdrs = {}
+        for line in head.decode("utf-8", "replace").split("\r\n"):
+            if ":" in line:
+                k, v = line.split(":", 1)
+                hdrs[k.strip().lower()] = v.strip()
+        parts.append((hdrs, body[:-2] if body.endswith(b"\r\n") else body))
+    return parts
+
+
+def pprof_summary(data):
+    """a pprof profile's sample types, sample count and function names (profile.proto read by hand)"""
+    if data[:2] == b"\x1f\x8b":
+        data = gzip.decompress(data)
+
+    def varint(b, i):
+        r = s = 0
+        while True:
+            c = b[i]; i += 1
+            r |= (c & 0x7F) << s; s += 7
+            if c < 0x80:
+                return r, i
+
+    def fields(b):
+        i = 0
+        while i < len(b):
+            key, i = varint(b, i)
+            f, wt = key >> 3, key & 7
+            if wt == 0:
+                v, i = varint(b, i)
+            elif wt == 2:
+                n, i = varint(b, i)
+                v, i = b[i:i + n], i + n
+            elif wt == 1:
+                v, i = b[i:i + 8], i + 8
+            else:
+                v, i = b[i:i + 4], i + 4
+            yield f, v
+
+    types, strs, fnames, samples = [], [], [], 0
+    for f, v in fields(data):
+        if f == 1:
+            d = dict(fields(v))
+            types.append((d.get(1, 0), d.get(2, 0)))
+        elif f == 2:
+            samples += 1
+        elif f == 5:
+            fnames.append(dict(fields(v)).get(2, 0))
+        elif f == 6:
+            strs.append(v.decode("utf-8", "replace"))
+    return {"sample_types": [[strs[a], strs[b]] for a, b in types], "samples": samples,
+            "functions": sorted(set(strs[i] for i in fnames))}
 
 
 def make_handler(kind):
@@ -102,6 +165,33 @@ def make_handler(kind):
                 traces = json.loads(data) if "json" in ct else unpack(data)
                 record({"kind": "dd", "path": path, "headers": hdr, "traces": traces})
                 return self.reply(200, {"rate_by_service": {}})
+            if kind == "dd" and path in ("/profiling/v1/input", "/api/v2/profile"):  # (the Agent's, the intake's)
+                # (dd-trace's profiler: the event JSON and each attachment's name, type, size, compression and what its
+                # pprof holds; the headers it sends, the API key only as present or not)
+                rec = {"kind": "dd-profile", "path": path, "headers": {k.lower(): v for k, v in self.headers.items() if k.lower().startswith("dd-")}}
+                if "dd-api-key" in rec["headers"]:
+                    rec["headers"]["dd-api-key"] = "<present>"
+                ct = self.headers.get("Content-Type", "")
+                rec["content_type"] = ct.split(";")[0]
+                rec["files"] = []
+                for h, body in multipart(data, ct):
+                    disp = h.get("content-disposition", "")
+                    name = disp.split('name="', 1)[1].split('"', 1)[0] if 'name="' in disp else ""
+                    fname = disp.split('filename="', 1)[1].split('"', 1)[0] if 'filename="' in disp else ""
+                    if name == "event":
+                        rec["event"] = json.loads(body)
+                        rec["event_part"] = {"filename": fname, "content_type": h.get("content-type", "")}
+                        continue
+                    comp = "gzip" if body[:2] == b"\x1f\x8b" else "zstd" if body[:4] == b"\x28\xb5\x2f\xfd" else "none"
+                    f = {"name": name, "filename": fname, "content_type": h.get("content-type", ""), "size": len(body), "compression": comp}
+                    if comp != "zstd":  # (no zstd in Python's standard library before 3.14)
+                        try:
+                            f["pprof"] = pprof_summary(body)
+                        except Exception as e:  # (not a pprof profile: said so)
+                            f["pprof"] = {"error": repr(e)}
+                    rec["files"].append(f)
+                record(rec)
+                return self.reply(200, {})
             if kind == "elastic" and path == "/intake/v2/events":
                 events = [json.loads(l) for l in data.decode().splitlines() if l.strip()]
                 record({"kind": "elastic", "headers": hdr, "events": events})

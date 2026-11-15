@@ -69,6 +69,9 @@ agents do, so the packages that an agent instruments (`@nestjs/core`, `express`,
 `redis`, `ioredis`, `@elastic/elasticsearch`, the pino loggers) call `xisto-apm`'s hooks themselves. With no agent
 started, each hook costs one boolean test. `dd-trace` sends to the Datadog Agent (`/v0.4/traces`), and its spans
 carry the same names and tags as the real dd-trace's: `tests/apm/dd` compares them with dd-trace 5.131.1 on Node.
+`tracer.init({ profiling: true })` (or `DD_PROFILING_ENABLED=true`) also fills Datadog's Profiles tab: CPU time
+sampled by xisto's runtime (`xisto:profiler`: a xisto newer than 0.4.2), uploaded every 65 s as dd-trace does, to the
+Agent or, with `DD_PROFILING_AGENTLESS=true` and `DD_API_KEY`, to Datadog's intake (`tests/apm/dd-profiler`).
 `elastic-apm-node` sends to the APM Server's intake v2 (`tests/apm/elastic` compares the events with those of
 elastic-apm-node 4.18.0 on Node). `newrelic`, `@dynatrace/oneagent`/`@dynatrace/oneagent-sdk` and `appdynamics`
 keep their npm APIs and send OTLP/HTTP JSON to each vendor's OpenTelemetry entry (their agents' own protocols are

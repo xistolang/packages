@@ -8,11 +8,12 @@
 // DD_TRACE_AGENT_PORT, DD_TRACE_AGENT_URL, DD_TRACE_ENABLED, DD_TRACE_SAMPLE_RATE, DD_TAGS).
 // Differences from dd-trace: tracing starts at init() (Node: also through --require dd-trace/init); use() accepts a
 // plugin name and options and does nothing (every integration is on); runtime metrics are the runtime.node.* that xisto can
-// measure (no V8 heap spaces nor GC: see startRuntimeMetrics); profiling, AppSec, remote configuration and telemetry
-// are not sent; the payload is JSON, not msgpack; the default service is the program's
-// name (Node: package.json's name).
+// measure (no V8 heap spaces nor GC: see startRuntimeMetrics); the profiler sends CPU time only (see profiling.ts);
+// AppSec, remote configuration and telemetry are not sent; the payload is JSON, not msgpack; the default service is
+// the program's name (Node: package.json's name).
 import { newSpan, extractParent, injectHeaders } from "xisto-apm";
 import { Apm, ApmSpan, ApmServiceInfo, ApmExporter, ApmTrace, ApmSpanOptions, ApmParent, finishWith, runIn, activeSpan, localRoot, hostName, nsText, newId, hexToDdId, sendUdp } from "xisto-apm";
+import { profilingWanted, startProfiling } from "./profiling";
 
 
 /** The options of init(). */
@@ -286,6 +287,11 @@ export function init(options: TracerOptions = {}): Tracer {
   if (options.runtimeMetrics === true || rmEnv === "true" || rmEnv === "1") {
     const statsdHost = envOr("DD_DOGSTATSD_HOST", options.hostname ?? envOr("DD_AGENT_HOST", "127.0.0.1"));
     startRuntimeMetrics(statsdHost, Math.trunc(Number(envOr("DD_DOGSTATSD_PORT", "8125"))), info, exporter.rid);
+  }
+  // the continuous profiler (Datadog's Profiles tab): init({ profiling: true }) or DD_PROFILING_ENABLED=true
+  if (profilingWanted(options.profiling ?? null)) {
+    const fromUser = options.service !== null || envOr("DD_SERVICE", "").length > 0;
+    startProfiling(info, exporter.rid, url, fromUser);
   }
   return tracer;
 }
