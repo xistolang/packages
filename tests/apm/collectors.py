@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Fake APM collectors for the tests: a Datadog Agent (PUT/POST /v0.4/traces, msgpack or JSON), an Elastic APM Server
-# (POST /intake/v2/events, ndjson, gzip or deflate or plain) and an OTLP/HTTP receiver (POST /v1/traces, JSON).
+# (POST /intake/v2/events, ndjson, gzip or deflate or plain) and an OTLP/HTTP receiver (POST /v1/traces, JSON; also
+# /v1/metrics and /v1/logs, recorded as kind "otlp-metrics" and "otlp-logs").
 # Every payload received is appended, decoded, as one JSON line to OUT ({"kind": "dd" | "elastic" | "otlp", ...}).
 # usage: collectors.py OUT DD_PORT ELASTIC_PORT OTLP_PORT   (prints "ready" when listening)
 import gzip, json, sys, threading, zlib
@@ -107,6 +108,9 @@ def make_handler(kind):
                 return self.reply(202, {})
             if kind == "otlp" and path == "/v1/traces":
                 record({"kind": "otlp", "headers": hdr, "body": json.loads(data or b"{}")})
+                return self.reply(200, {})
+            if kind == "otlp" and path in ("/v1/metrics", "/v1/logs"):
+                record({"kind": "otlp-" + path[4:], "headers": hdr, "body": json.loads(data or b"{}")})
                 return self.reply(200, {})
             self.reply(404 if kind != "dd" else 200, {})
 

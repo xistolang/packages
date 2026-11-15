@@ -64,6 +64,7 @@ apm-dd-redis tests/apm/dd-redis/run.sh
 apm-http tests/apm/http/run.sh ^ok:
 apm-elastic tests/apm/elastic/run.sh ^ok:.elastic-apm-node
 apm-newrelic tests/apm/newrelic/run.sh ^ok:.newrelic
+apm-otel tests/apm/otel/run.sh ^ok:.otel
 apm-resilience tests/apm/resilience/run.sh ^ok:.resilience
 apm-dynatrace tests/apm/dynatrace/run.sh ^ok:.dynatrace
 apm-appdynamics tests/apm/appdynamics/run.sh ^ok:.appdynamics

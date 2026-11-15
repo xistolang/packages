@@ -28,8 +28,12 @@
 // - insertDistributedTraceHeaders writes traceparent only (as the agent before it has connected: no tracestate
 //   nor "newrelic" header, which need the account's trusted key); acceptDistributedTraceHeaders reads traceparent
 //   (and xisto-apm's other formats).
-// - recordMetric, incrementMetric, recordCustomEvent, recordLogEvent, setDispatcher, setIgnoreTransaction & the
-//   instrument* functions are accepted and send nothing (OTLP metrics, events and logs are not exported).
+// - Metrics: OTLP delta metrics to …/v1/metrics, sent with the traces: http.server.request.duration,
+//   http.client.request.duration and db.client.operation.duration (from the spans, OpenTelemetry's semantic
+//   conventions: what New Relic's Summary, Transactions, Databases and External services pages read), recordMetric
+//   (a gauge) and incrementMetric (a count).
+// - recordCustomEvent, recordLogEvent, setDispatcher, setIgnoreTransaction & the instrument* functions are accepted
+//   and send nothing.
 // - noticeError outside a transaction is dropped (OTLP has no error without a span).
 // - shutdown always sends what is pending (collectPendingData is not needed).
 // - startSegment's callback argument is accepted; the segment ends when the handler returns (or its promise
@@ -38,6 +42,7 @@
 import {
   Apm,
   ApmOtlpExporter,
+  spanBudgetSampler,
   ApmServiceInfo,
   ApmSpan,
   ApmSpanOptions,
@@ -94,6 +99,12 @@ export function start(): void {
   const h = new Map<string, string>();
   h.set("api-key", key);
   const ex = new ApmOtlpExporter(url, h);
+  // New Relic's APM pages (Summary, Transactions, Databases, External services) are drawn from OTLP metrics
+  ex.withMetrics();
+  // the traces themselves are sampled as the agent does: NEW_RELIC_SPAN_EVENTS_MAX_SAMPLES_STORED spans a minute
+  // (default 2000), errors always kept; the metrics above count every request
+  const budget = Math.trunc(Number(env("NEW_RELIC_SPAN_EVENTS_MAX_SAMPLES_STORED") ?? "2000"));
+  if (budget > 0) Apm.setKeepTrace(spanBudgetSampler(budget));
   exporter = ex;
   Apm.start(info, ex);
 }
@@ -348,10 +359,25 @@ export function getLinkingMetadata(omitSupportability: boolean = false): Record<
   return r;
 }
 
+// ---- custom metrics: OTLP metrics with the name given (a gauge; incrementMetric a delta count) ----
+
+export function recordMetric(name: string, value: any): void {
+  start();
+  const ex = exporter;
+  if (ex === null || ex.metrics === null) return;
+  // a number, or the agent's summary object ({ count, total, min, max, sumOfSquares }): its total
+  const v = typeof value === "number" ? (value as number) : Number((value as Record<string, any>)["total"] ?? 0);
+  ex.withMetrics().gauge(name, v);
+}
+export function incrementMetric(name: string, value: number = 1): void {
+  start();
+  const ex = exporter;
+  if (ex === null || ex.metrics === null) return;
+  ex.withMetrics().count(name, value);
+}
+
 // ---- accepted, not exported ----
 
-export function recordMetric(name: string, value: any): void {}
-export function incrementMetric(name: string, value: number = 1): void {}
 export function recordCustomEvent(eventType: string, attributes: any): void {}
 export function recordLogEvent(logEvent: any): void {}
 export function setDispatcher(name: string, version: string | null = null): void {}
@@ -428,8 +454,12 @@ export class NewRelicApi {
   getLinkingMetadata(omitSupportability: boolean = false): Record<string, string> {
     return getLinkingMetadata(omitSupportability);
   }
-  recordMetric(name: string, value: any): void {}
-  incrementMetric(name: string, value: number = 1): void {}
+  recordMetric(name: string, value: any): void {
+    recordMetric(name, value);
+  }
+  incrementMetric(name: string, value: number = 1): void {
+    incrementMetric(name, value);
+  }
   recordCustomEvent(eventType: string, attributes: any): void {}
   recordLogEvent(logEvent: any): void {}
   setDispatcher(name: string, version: string | null = null): void {}
