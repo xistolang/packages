@@ -71,6 +71,7 @@ apm-resilience tests/apm/resilience/run.sh ^ok:.resilience
 apm-dynatrace tests/apm/dynatrace/run.sh ^ok:.dynatrace
 apm-appdynamics tests/apm/appdynamics/run.sh ^ok:.appdynamics
 nest-forms examples/nest-forms/test/run.sh ^ok:.nest-forms
+nest-dto examples/nest-dto/test/run.sh ^ok:.nest-dto
 conduit -
 "
 pass=0; fail=0; skip=0; partial=0

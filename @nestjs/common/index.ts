@@ -746,7 +746,10 @@ function pipeOf(a: unknown, pipe: ClassInfo | null): ClassInfo | null {
 export function Body(key: unknown = "", pipe: ClassInfo | null = null): (c: ClassInfo, m: MethodInfo | null, index: int) => void {
   return param("body", keyOf(key), -1, pipeOf(key, pipe));
 }
-/** A route parameter (:id); with ParseIntPipe, as an integer. */
+/**
+ * A route parameter (:id); with ParseIntPipe, as an integer. With no key, all the route's parameters: a DTO filled
+ * and validated as Nest's ValidationPipe does, as @Query() does with the query.
+ */
 export function Param(key: unknown = "", pipe: ClassInfo | null = null): (c: ClassInfo, m: MethodInfo | null, index: int) => void {
   return param("param", keyOf(key), -1, pipeOf(key, pipe));
 }

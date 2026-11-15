@@ -1,0 +1,7 @@
+GET /dto/text?term=abc -> 200 {"lang": "absent", "term": "string:abc", "upper": "ABC"}
+GET /dto/text?term=abc&lang=pt -> 200 {"lang": "string:pt", "term": "string:abc", "upper": "ABC"}
+GET /dto/text?term=caf%C3%A9&lang=en -> 200 {"lang": "string:en", "term": "string:café", "upper": "CAFÉ"}
+GET /dto/text?term=a%20b%2Bc -> 200 {"lang": "absent", "term": "string:a b+c", "upper": "A B+C"}
+GET /dto/pages/doc/intro?term=x -> 200 {"kind": "string:doc", "path": "doc/intro", "slug": "string:intro", "term": "string:x"}
+GET /dto/pages/faq/a-b?term=y -> 200 {"kind": "string:faq", "path": "faq/a-b", "slug": "string:a-b", "term": "string:y"}
+GET /dto/pages/doc/caf%C3%A9?term=z -> 200 {"kind": "string:doc", "path": "doc/café", "slug": "string:café", "term": "string:z"}
