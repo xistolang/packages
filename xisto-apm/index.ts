@@ -22,6 +22,7 @@ declare function decToHex(d: string): string;
 declare function nowNs(): number;
 declare function monoNs(): number;
 declare function hostname(): string;
+declare function udpSend(host: string, port: int, payload: string): boolean;
 
 /** What an agent sends finished traces to: the backend's protocol (Datadog Agent, OTLP, Elastic intake). */
 export interface ApmExporter {
@@ -516,6 +517,10 @@ export function newId(): string {
 }
 
 /** The host name, for the agents' metadata. */
+/** One UDP datagram (DogStatsD); false when it could not be sent (never blocks, never throws). */
+export function sendUdp(host: string, port: int, payload: string): boolean {
+  return udpSend(host, port, payload);
+}
 export function hostName(): string {
   return hostname();
 }

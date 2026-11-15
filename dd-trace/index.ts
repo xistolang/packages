@@ -7,11 +7,12 @@
 // Configuration: init(options) and the DD_* variables (DD_SERVICE, DD_ENV, DD_VERSION, DD_AGENT_HOST,
 // DD_TRACE_AGENT_PORT, DD_TRACE_AGENT_URL, DD_TRACE_ENABLED, DD_TRACE_SAMPLE_RATE, DD_TAGS).
 // Differences from dd-trace: tracing starts at init() (Node: also through --require dd-trace/init); use() accepts a
-// plugin name and options and does nothing (every integration is on); runtime metrics, profiling, AppSec, remote
-// configuration and telemetry are not sent; the payload is JSON, not msgpack; the default service is the program's
+// plugin name and options and does nothing (every integration is on); runtime metrics are the runtime.node.* that xisto can
+// measure (no V8 heap spaces nor GC: see startRuntimeMetrics); profiling, AppSec, remote configuration and telemetry
+// are not sent; the payload is JSON, not msgpack; the default service is the program's
 // name (Node: package.json's name).
 import { newSpan, extractParent, injectHeaders } from "xisto-apm";
-import { Apm, ApmSpan, ApmServiceInfo, ApmExporter, ApmTrace, ApmSpanOptions, ApmParent, finishWith, runIn, activeSpan, localRoot, hostName, nsText, newId, hexToDdId } from "xisto-apm";
+import { Apm, ApmSpan, ApmServiceInfo, ApmExporter, ApmTrace, ApmSpanOptions, ApmParent, finishWith, runIn, activeSpan, localRoot, hostName, nsText, newId, hexToDdId, sendUdp } from "xisto-apm";
 
 
 /** The options of init(). */
@@ -279,8 +280,67 @@ export function init(options: TracerOptions = {}): Tracer {
   let url = options.url ?? envOr("DD_TRACE_AGENT_URL", `http://${host}:${port}`);
   if (url.endsWith("/")) url = url.slice(0, url.length - 1);
   if (options.flushInterval !== null) Apm.setFlushInterval(Math.trunc(options.flushInterval as number));
-  Apm.start(info, new AgentExporter(url + "/v0.4/traces"));
+  const exporter = new AgentExporter(url + "/v0.4/traces");
+  Apm.start(info, exporter);
+  const rmEnv = envOr("DD_RUNTIME_METRICS_ENABLED", "false");
+  if (options.runtimeMetrics === true || rmEnv === "true" || rmEnv === "1") {
+    const statsdHost = envOr("DD_DOGSTATSD_HOST", options.hostname ?? envOr("DD_AGENT_HOST", "127.0.0.1"));
+    startRuntimeMetrics(statsdHost, Math.trunc(Number(envOr("DD_DOGSTATSD_PORT", "8125"))), info, exporter.rid);
+  }
   return tracer;
+}
+
+// ---- runtime metrics (DogStatsD to the Agent every 10 s, as dd-trace's runtimeMetrics: the service page's Runtime
+// Metrics tab): the runtime.node.* metrics xisto can measure. CPU (user, system, total, % of one core over the
+// interval), memory (rss, heap: xisto's estimate, process.memoryUsage), event loop delay (how late a 10 ms timer
+// fires: avg, max), uptime. No V8 heap spaces nor GC pauses: xisto has neither (reference counting). ----
+
+function startRuntimeMetrics(host: string, port: int, info: ApmServiceInfo, rid: string): void {
+  const tagList: string[] = [`service:${info.service}`, `runtime-id:${rid}`, "language:javascript"];
+  if (info.env.length > 0) tagList.push(`env:${info.env}`);
+  if (info.version.length > 0) tagList.push(`version:${info.version}`);
+  const tags = "|#" + tagList.join(",");
+  let lastCpu = process.cpuUsage();
+  let lastAt = Date.now();
+  const started = Date.now();
+  // event loop delay: a 10 ms timer, how late it fires
+  let lagSum = 0;
+  let lagMax = 0;
+  let lagN = 0;
+  let expect = Date.now() + 10;
+  setInterval(() => {
+    const now = Date.now();
+    const late = Math.max(0, now - expect);
+    lagSum += late;
+    if (late > lagMax) lagMax = late;
+    lagN++;
+    expect = now + 10;
+  }, 10).unref();
+  setInterval(() => {
+    const now = Date.now();
+    const cpu = process.cpuUsage();
+    const wallUs = Math.max(1, (now - lastAt) * 1000);
+    const user = ((cpu.user - lastCpu.user) / wallUs) * 100;
+    const system = ((cpu.system - lastCpu.system) / wallUs) * 100;
+    lastCpu = cpu;
+    lastAt = now;
+    const mem = process.memoryUsage();
+    const lines: string[] = [
+      `runtime.node.cpu.user:${user}|g${tags}`,
+      `runtime.node.cpu.system:${system}|g${tags}`,
+      `runtime.node.cpu.total:${user + system}|g${tags}`,
+      `runtime.node.mem.rss:${mem.rss}|g${tags}`,
+      `runtime.node.mem.heap_used:${mem.heapUsed}|g${tags}`,
+      `runtime.node.mem.heap_total:${mem.heapTotal}|g${tags}`,
+      `runtime.node.event_loop.delay.avg:${lagN > 0 ? (lagSum / lagN) * 1e6 : 0}|g${tags}`,
+      `runtime.node.event_loop.delay.max:${lagMax * 1e6}|g${tags}`,
+      `runtime.node.process.uptime:${(now - started) / 1000}|g${tags}`,
+    ];
+    lagSum = 0;
+    lagMax = 0;
+    lagN = 0;
+    sendUdp(host, port, lines.join("\n"));
+  }, 10000).unref();
 }
 
 /** use(plugin, options): every integration is on in xisto (they are in the packages); accepted. */
