@@ -34,7 +34,8 @@
 // - Not implemented: __agent, the agent's own logger options, custom metrics (addMetric/reportMetric accepted,
 //   nothing sent), tx.beforeExitCall/exitCallCompleted callbacks (accepted, never called), tx.resume() (does
 //   nothing: the context already follows awaits).
-import { Apm, ApmOtlpExporter, ApmServiceInfo, ApmSpan, ApmSpanOptions, ApmParent, activeSpan, newSpan, enterSpan, extractParent, localRoot, hostName } from "xisto-apm";
+import { Apm, ApmServiceInfo, ApmSpan, ApmSpanOptions, ApmParent, activeSpan, newSpan, enterSpan, extractParent, localRoot, hostName } from "xisto-apm";
+import { ApmOtlpExporter } from "xisto-apm/otlp";
 
 /** The options of profile() (the ones used here; the others are accepted). */
 export interface ProfileOptions {

@@ -32,8 +32,16 @@
 //   http.client.request.duration and db.client.operation.duration (from the spans, OpenTelemetry's semantic
 //   conventions: what New Relic's Summary, Transactions, Databases and External services pages read), recordMetric
 //   (a gauge) and incrementMetric (a count).
-// - recordCustomEvent, recordLogEvent, setDispatcher, setIgnoreTransaction & the instrument* functions are accepted
-//   and send nothing.
+// - Logs in context (application_logging): NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED (default true, as the
+//   agent) sends each nestjs-pino line, and recordLogEvent's, as OTLP logs to …/v1/logs (with the traces): severity
+//   and body from the line's level and message, its other fields as attributes, and the active span's traceId and
+//   spanId, from which New Relic shows the line with its trace (trace.id, span.id) and its service (service.name);
+//   NEW_RELIC_APPLICATION_LOGGING_FORWARDING_MAX_SAMPLES_STORED (10000) lines wait at most between two sends.
+//   NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED (default false) appends
+//   " NR-LINKING|entity.guid|hostname|trace.id|span.id|entity.name|" to each line's message (the entity guid is
+//   empty: it comes from the collector). NEW_RELIC_APPLICATION_LOGGING_ENABLED=false turns both off.
+// - recordCustomEvent, setDispatcher, setIgnoreTransaction & the instrument* functions are accepted and send
+//   nothing.
 // - noticeError outside a transaction is dropped (OTLP has no error without a span).
 // - shutdown always sends what is pending (collectPendingData is not needed).
 // - startSegment's callback argument is accepted; the segment ends when the handler returns (or its promise
@@ -41,7 +49,8 @@
 // - getLinkingMetadata has no entity.guid (the agent learns it from the collector).
 import {
   Apm,
-  ApmOtlpExporter,
+  ApmLogs,
+  forwardLog,
   spanBudgetSampler,
   ApmServiceInfo,
   ApmSpan,
@@ -53,6 +62,7 @@ import {
   localRoot,
   hostName,
 } from "xisto-apm";
+import { ApmOtlpExporter } from "xisto-apm/otlp";
 
 /** What a transaction keeps beside its span: whether the code took it over (getTransaction: ended by hand). */
 export class TransactionState {
@@ -69,6 +79,13 @@ let exporter: ApmOtlpExporter | null = null;
 function env(name: string): string | null {
   const v = process.env[name];
   return v === null || v === "" ? null : v;
+}
+/** a boolean NEW_RELIC_* variable (true/false, also 1/0, yes/no, on/off), else dflt */
+function envBool(name: string, dflt: boolean): boolean {
+  const v = (env(name) ?? "").toLowerCase();
+  if (v === "true" || v === "1" || v === "yes" || v === "on") return true;
+  if (v === "false" || v === "0" || v === "no" || v === "off") return false;
+  return dflt;
 }
 
 /** (xisto) Starts the agent from the NEW_RELIC_* variables; done on import and on first use, once. */
@@ -105,6 +122,14 @@ export function start(): void {
   // (default 2000), errors always kept; the metrics above count every request
   const budget = Math.trunc(Number(env("NEW_RELIC_SPAN_EVENTS_MAX_SAMPLES_STORED") ?? "2000"));
   if (budget > 0) Apm.setKeepTrace(spanBudgetSampler(budget));
+  // application logging (logs in context): forwarding on by default, local decorating off, as in the agent
+  const logging = envBool("NEW_RELIC_APPLICATION_LOGGING_ENABLED", true);
+  const maxLogs = Math.trunc(Number(env("NEW_RELIC_APPLICATION_LOGGING_FORWARDING_MAX_SAMPLES_STORED") ?? "10000"));
+  ApmLogs.setNewRelic(
+    logging && envBool("NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED", true),
+    logging && envBool("NEW_RELIC_APPLICATION_LOGGING_LOCAL_DECORATING_ENABLED", false),
+    maxLogs >= 0 ? maxLogs : 10000,
+  );
   exporter = ex;
   Apm.start(info, ex);
 }
@@ -379,7 +404,23 @@ export function incrementMetric(name: string, value: number = 1): void {
 // ---- accepted, not exported ----
 
 export function recordCustomEvent(eventType: string, attributes: any): void {}
-export function recordLogEvent(logEvent: any): void {}
+/** A log line of the application's own ({ message, level, timestamp, error }), forwarded as the instrumented loggers'
+ * (with the current span's ids), when log forwarding is on. */
+export function recordLogEvent(logEvent: any): void {
+  start();
+  if (!Apm.on || !ApmLogs.forwarding) return;
+  const ev = logEvent as Record<string, any>;
+  const message = ev["message"];
+  if (message === null || message === undefined) return;
+  const level = ev["level"];
+  const err = ev["error"];
+  let fields = "";
+  if (err instanceof Error) {
+    const e = err as Error;
+    fields = `{"error.message":${JSON.stringify(e.message)},"error.class":${JSON.stringify(e.name)},"error.stack":${JSON.stringify(e.stack ?? "")}}`;
+  }
+  forwardLog(level === null || level === undefined ? "UNKNOWN" : String(level), String(message), fields);
+}
 export function setDispatcher(name: string, version: string | null = null): void {}
 export function setIgnoreTransaction(ignored: boolean): void {
   if (ignored) getTransaction().ignore();
@@ -461,7 +502,9 @@ export class NewRelicApi {
     incrementMetric(name, value);
   }
   recordCustomEvent(eventType: string, attributes: any): void {}
-  recordLogEvent(logEvent: any): void {}
+  recordLogEvent(logEvent: any): void {
+    recordLogEvent(logEvent);
+  }
   setDispatcher(name: string, version: string | null = null): void {}
   setIgnoreTransaction(ignored: boolean): void {
     setIgnoreTransaction(ignored);

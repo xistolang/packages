@@ -5,14 +5,19 @@
 // The packages that dd-trace instruments on Node (express/Nest requests, pg, oracledb, mongodb, redis, ioredis,
 // elasticsearch, pino logs) are instrumented by those packages themselves (xisto-apm hooks): nothing is patched.
 // Configuration: init(options) and the DD_* variables (DD_SERVICE, DD_ENV, DD_VERSION, DD_AGENT_HOST,
-// DD_TRACE_AGENT_PORT, DD_TRACE_AGENT_URL, DD_TRACE_ENABLED, DD_TRACE_SAMPLE_RATE, DD_TAGS).
+// DD_TRACE_AGENT_PORT, DD_TRACE_AGENT_URL, DD_TRACE_ENABLED, DD_TRACE_SAMPLE_RATE, DD_TAGS,
+// DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED).
+// Logs in context: logInjection / DD_LOGS_INJECTION (on by default, as in dd-trace 5) adds, at the end of each
+// nestjs-pino line, "dd":{"trace_id","span_id","service","version","env"}: trace_id is the 128-bit id in hex (the low
+// 64 bits in decimal with DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED=false or a trace without a high half), span_id
+// decimal; outside a span only service, version and env. The Agent's log collection sends the lines on.
 // Differences from dd-trace: tracing starts at init() (Node: also through --require dd-trace/init); use() accepts a
 // plugin name and options and does nothing (every integration is on); runtime metrics are the runtime.node.* that xisto can
 // measure (no V8 heap spaces nor GC: see startRuntimeMetrics); profiling, AppSec, remote configuration and telemetry
 // are not sent; the payload is JSON, not msgpack; the default service is the program's
 // name (Node: package.json's name).
 import { newSpan, extractParent, injectHeaders } from "xisto-apm";
-import { Apm, ApmSpan, ApmServiceInfo, ApmExporter, ApmTrace, ApmSpanOptions, ApmParent, finishWith, runIn, activeSpan, localRoot, hostName, nsText, newId, hexToDdId, sendUdp } from "xisto-apm";
+import { Apm, ApmLogs, ApmSpan, ApmServiceInfo, ApmExporter, ApmTrace, ApmSpanOptions, ApmParent, finishWith, runIn, activeSpan, localRoot, hostName, nsText, newId, hexToDdId, sendUdp } from "xisto-apm";
 
 
 /** The options of init(). */
@@ -148,6 +153,11 @@ function envOr(name: string, dflt: string): string {
   const v = process.env[name];
   return v !== null && v.length > 0 ? v : dflt;
 }
+/** a boolean DD_* variable: true/1 or false/0 (any case), else dflt */
+function envBool(name: string, dflt: boolean): boolean {
+  const v = envOr(name, "").toLowerCase();
+  return v === "true" || v === "1" ? true : v === "false" || v === "0" ? false : dflt;
+}
 
 /** dd-trace's own exporter: the Datadog Agent's v0.4 traces endpoint. */
 export class AgentExporter implements ApmExporter {
@@ -268,6 +278,9 @@ export function init(options: TracerOptions = {}): Tracer {
   info.version = options.version ?? envOr("DD_VERSION", "");
   info.hostname = hostName();
   info.sampleRate = options.sampleRate ?? Number(envOr("DD_TRACE_SAMPLE_RATE", "1"));
+  info.trace128 = envBool("DD_TRACE_128_BIT_TRACEID_GENERATION_ENABLED", true);
+  // logs in context (dd-trace 5: on by default): the "dd" field on the loggers' lines
+  ApmLogs.setDatadog(options.logInjection ?? envBool("DD_LOGS_INJECTION", true), envBool("DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED", true));
   const ddTags = envOr("DD_TAGS", "");
   for (const kv of ddTags.split(/[ ,]/)) {
     const i = kv.indexOf(":");

@@ -1,0 +1,107 @@
+{
+ "headers": [
+  "{\"api-key\": \"0123456789abcdef0123456789abcdef01234567\", \"content-type\": \"application/json\"}"
+ ],
+ "logs": [
+  {
+   "attributes": {
+    "context": "Main",
+    "hostname": "<host>",
+    "pid": "<pid>"
+   },
+   "body": {
+    "stringValue": "before any transaction NR-LINKING||<host>|||shop|"
+   },
+   "severityNumber": 9,
+   "severityText": "info"
+  },
+  {
+   "attributes": {
+    "context": "Shop",
+    "hostname": "<host>",
+    "pid": "<pid>"
+   },
+   "body": {
+    "stringValue": "in checkout NR-LINKING||<host>|trace:/checkout|span:/checkout|shop|"
+   },
+   "severityNumber": 9,
+   "severityText": "info",
+   "spanId": "span:/checkout",
+   "traceId": "trace:/checkout"
+  },
+  {
+   "attributes": {
+    "context": "Shop",
+    "hostname": "<host>",
+    "pid": "<pid>"
+   },
+   "body": {
+    "stringValue": "slow query NR-LINKING||<host>|trace:/checkout|span:db.query|shop|"
+   },
+   "severityNumber": 13,
+   "severityText": "warn",
+   "spanId": "span:db.query",
+   "traceId": "trace:/checkout"
+  },
+  {
+   "attributes": {},
+   "body": {
+    "stringValue": "cart priced"
+   },
+   "severityNumber": 9,
+   "severityText": "INFO",
+   "spanId": "span:/checkout",
+   "traceId": "trace:/checkout"
+  },
+  {
+   "attributes": {
+    "context": "Shop",
+    "hostname": "<host>",
+    "pid": "<pid>"
+   },
+   "body": {
+    "stringValue": "back in checkout NR-LINKING||<host>|trace:/checkout|span:/checkout|shop|"
+   },
+   "severityNumber": 9,
+   "severityText": "info",
+   "spanId": "span:/checkout",
+   "traceId": "trace:/checkout"
+  },
+  {
+   "attributes": {
+    "context": "Job",
+    "hostname": "<host>",
+    "pid": "<pid>"
+   },
+   "body": {
+    "stringValue": "after await NR-LINKING||<host>|trace:rebuild|span:rebuild|shop|"
+   },
+   "severityNumber": 17,
+   "severityText": "error",
+   "spanId": "span:rebuild",
+   "traceId": "trace:rebuild"
+  },
+  {
+   "attributes": {
+    "context": "Main",
+    "hostname": "<host>",
+    "pid": "<pid>"
+   },
+   "body": {
+    "stringValue": "after the transactions NR-LINKING||<host>|||shop|"
+   },
+   "severityNumber": 9,
+   "severityText": "info"
+  }
+ ],
+ "resources": [
+  {
+   "service.name": "shop",
+   "telemetry.sdk.language": "nodejs",
+   "telemetry.sdk.name": "xisto-apm"
+  }
+ ],
+ "scopes": [
+  "{\"name\": \"xisto-apm\", \"version\": \"0.1.0\"}"
+ ]
+}

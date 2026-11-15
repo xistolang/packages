@@ -1,0 +1,6 @@
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Main","msg":"before any transaction"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Shop","msg":"in checkout"}
+{"level":40,"time":T,"pid":P,"hostname":H,"context":"Shop","msg":"slow query"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Shop","msg":"back in checkout"}
+{"level":50,"time":T,"pid":P,"hostname":H,"context":"Job","msg":"after await"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Main","msg":"after the transactions"}

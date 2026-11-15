@@ -5,12 +5,12 @@
 {"message":"Cannot GET /nope","error":"Not Found","statusCode":404}
 {"id":"1","name":"ana"}
 done
-{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"NestApplication","message":"Nest application successfully started"}
-{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","dd":{"trace_id":"ID1","span_id":"ID2","service":"shop"},"trace.id":"ID1","transaction.id":"ID3","message":"user 42"}
-{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","dd":{"trace_id":"ID1","span_id":"ID4","service":"shop"},"trace.id":"ID1","transaction.id":"ID3","span.id":"ID5","message":"loading"}
-{"log.level":"error","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"ExceptionsHandler","dd":{"trace_id":"ID6","span_id":"ID7","service":"shop"},"trace.id":"ID6","transaction.id":"ID8","message":"kaboom"}
-{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","dd":{"trace_id":"ID9","span_id":"ID10","service":"shop"},"trace.id":"ID9","transaction.id":"ID11","message":"user 1"}
-{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","dd":{"trace_id":"ID9","span_id":"ID12","service":"shop"},"trace.id":"ID9","transaction.id":"ID11","span.id":"ID13","message":"loading"}
+{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"NestApplication","message":"Nest application successfully started","dd":{"service":"shop"}}
+{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","trace.id":"ID1","transaction.id":"ID2","message":"user 42","dd":{"trace_id":"ID1","span_id":"ID3","service":"shop"}}
+{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","trace.id":"ID1","transaction.id":"ID2","span.id":"ID4","message":"loading","dd":{"trace_id":"ID1","span_id":"ID5","service":"shop"}}
+{"log.level":"error","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"ExceptionsHandler","trace.id":"ID6","transaction.id":"ID7","message":"kaboom","dd":{"trace_id":"ID6","span_id":"ID8","service":"shop"}}
+{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","trace.id":"ID9","transaction.id":"ID10","message":"user 1","dd":{"trace_id":"ID9","span_id":"ID11","service":"shop"}}
+{"log.level":"info","@timestamp":T,"process.pid":P,"host.hostname":H,"ecs.version":"8.10.0","service.name":"shop","event.dataset":"shop","log.logger":"Users","trace.id":"ID9","transaction.id":"ID10","span.id":"ID12","message":"loading","dd":{"trace_id":"ID9","span_id":"ID13","service":"shop"}}
 web.request [server] resource="GET /users/:id" type=web component=express
   http.method=GET
   http.route=/users/:id
@@ -19,9 +19,9 @@ web.request [server] resource="GET /users/:id" type=web component=express
   http.useragent=apm-test
   interceptor.saw=web.request
   span.kind=server
-  #trace=ID1 #span=ID2 #hex=ID3
+  #trace=ID1 #span=ID3 #hex=ID2
   users.load [internal] resource="users.load" type= component=
-    #trace=ID1 #span=ID4 #hex=ID5
+    #trace=ID1 #span=ID5 #hex=ID4
 web.request [server] resource="POST /users" type=web component=express
   http.method=POST
   http.route=/users
@@ -48,7 +48,7 @@ web.request [server] resource="GET /boom" type=web component=express
   http.useragent=apm-test
   interceptor.saw=web.request
   span.kind=server
-  #trace=ID6 #span=ID7 #hex=ID8
+  #trace=ID6 #span=ID8 #hex=ID7
   error: Error: kaboom
 web.request [server] resource="GET" type=web component=express
   http.method=GET
@@ -65,6 +65,6 @@ web.request [server] resource="GET /users/:id" type=web component=express <- rem
   http.useragent=apm-test
   interceptor.saw=web.request
   span.kind=server
-  #trace=ID9 #span=ID10 #hex=ID11
+  #trace=ID9 #span=ID11 #hex=ID10
   users.load [internal] resource="users.load" type= component=
-    #trace=ID9 #span=ID12 #hex=ID13
+    #trace=ID9 #span=ID13 #hex=ID12

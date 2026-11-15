@@ -3,14 +3,15 @@
 # xisto build) can be compared: ids become relations (the name of the span or transaction they point to), times,
 # durations, pids, host names, argv and agent/runtime versions are taken out (after checking their form), error
 # stack traces become "<frames>" and the events are sorted.
-# usage: normalize.py RECORDED.jsonl elastic|otlp   (prints the normalized JSON)
+# usage: normalize.py RECORDED.jsonl elastic|otlp|otlp-logs   (prints the normalized JSON)
+# otlp-logs: the log records in the order sent, their traceId/spanId as the names of the OTLP spans recorded with them
 import json, re, sys
 
 HEX16 = re.compile(r"^[0-9a-f]{16}$")
 HEX32 = re.compile(r"^[0-9a-f]{32}$")
-records = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
+all_records = [json.loads(l) for l in open(sys.argv[1]) if l.strip()]
 kind = sys.argv[2]
-records = [r for r in records if r["kind"] == kind]
+records = [r for r in all_records if r["kind"] == kind]
 problems = []
 
 
@@ -127,7 +128,57 @@ def otlp():
     return {"headers": headers, "resources": sorted(json.loads(r) for r in resources), "scopes": sorted(scopes), "spans": out}
 
 
-result = elastic() if kind == "elastic" else otlp()
+def otlp_logs():
+    headers = sorted({json.dumps(r["headers"], sort_keys=True) for r in records})
+    names = {}
+    for r in all_records:
+        if r["kind"] != "otlp":
+            continue
+        for rs in r["body"].get("resourceSpans", []):
+            for ss in rs.get("scopeSpans", []):
+                for s in ss.get("spans", []):
+                    names[s["spanId"]] = "span:" + s["name"]
+                    if not s.get("parentSpanId"):
+                        names[s["traceId"]] = "trace:" + s["name"]
+    resources = set()
+    scopes = set()
+    logs = []
+    for r in records:
+        for rl in r["body"].get("resourceLogs", []):
+            res = attrs(rl.get("resource", {}).get("attributes", []))
+            check("host.name" in res, "resource host.name")
+            res.pop("host.name", None)
+            resources.add(json.dumps(res, sort_keys=True))
+            for sl in rl.get("scopeLogs", []):
+                scopes.add(json.dumps(sl.get("scope", {}), sort_keys=True))
+                for lr in sl.get("logRecords", []):
+                    lr = json.loads(json.dumps(lr))
+                    t = int(lr.pop("timeUnixNano"))
+                    check(t > 1.6e18 and int(lr.pop("observedTimeUnixNano", t)) >= t, "log times")
+                    if "traceId" in lr:
+                        check(HEX32.match(lr["traceId"]) is not None and HEX16.match(lr.get("spanId", "")) is not None, "log ids")
+                        lr["traceId"] = names.get(lr["traceId"], "<unknown>")
+                        lr["spanId"] = names.get(lr["spanId"], "<unknown>")
+                    a = attrs(lr.get("attributes", []))
+                    for k in ("pid", "process.pid"):
+                        if k in a:
+                            check(isinstance(a[k], int), "log " + k)
+                            a[k] = "<pid>"
+                    for k in ("hostname", "host.hostname"):
+                        if k in a:
+                            a[k] = "<host>"
+                    if "error.stack" in a:
+                        a["error.stack"] = "<frames>"
+                    lr["attributes"] = a
+                    body = lr.get("body", {}).get("stringValue")
+                    if isinstance(body, str):
+                        lr["body"]["stringValue"] = re.sub(r"NR-LINKING\|([^|]*)\|[^|]*\|([^|]*)\|([^|]*)\|",
+                            lambda m: "NR-LINKING|%s|<host>|%s|%s|" % (m.group(1), names.get(m.group(2), m.group(2)), names.get(m.group(3), m.group(3))), body)
+                    logs.append(lr)
+    return {"headers": headers, "resources": sorted(json.loads(r) for r in resources), "scopes": sorted(scopes), "logs": logs}
+
+
+result = elastic() if kind == "elastic" else otlp_logs() if kind == "otlp-logs" else otlp()
 if problems:
     result["problems"] = sorted(set(problems))
 print(json.dumps(result, indent=1, sort_keys=True))

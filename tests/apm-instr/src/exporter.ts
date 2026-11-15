@@ -1,7 +1,7 @@
 // The tests' exporter: prints each trace as a tree (a span under its parent; "<- remote" for a parent from another
 // service), with its name, resource, type, kind, component, error and its tags sorted. No ids, times or hosts that
 // change between runs.
-import { Apm, ApmExporter, ApmServiceInfo, ApmSpan } from "xisto-apm";
+import { Apm, ApmExporter, ApmLogs, ApmServiceInfo, ApmSpan } from "xisto-apm";
 
 /** print each span's ids too (tests that compare them with the logs' map them to labels) */
 let showIds = false;
@@ -72,6 +72,9 @@ export function startApm(): PrintExporter {
   const info = new ApmServiceInfo();
   info.service = "shop";
   const ex = new PrintExporter();
+  // the log fields of dd-trace (logInjection) and of the Elastic agent (ECS lines), as their agents turn them on
+  ApmLogs.setDatadog(true, true);
+  ApmLogs.setEcs(true);
   Apm.start(info, ex);
   return ex;
 }

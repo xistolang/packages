@@ -5,12 +5,12 @@
 {"message":"Cannot GET /nope","error":"Not Found","statusCode":404}
 {"id":"1","name":"ana"}
 done
-{"level":30,"time":T,"pid":P,"hostname":H,"context":"NestApplication","msg":"Nest application successfully started"}
-{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID1","span_id":"ID2","service":"shop"},"msg":"user 42"}
-{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID1","span_id":"ID3","service":"shop"},"msg":"loading"}
-{"level":50,"time":T,"pid":P,"hostname":H,"context":"ExceptionsHandler","dd":{"trace_id":"ID4","span_id":"ID5","service":"shop"},"msg":"kaboom"}
-{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID6","span_id":"ID7","service":"shop"},"msg":"user 1"}
-{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","dd":{"trace_id":"ID6","span_id":"ID8","service":"shop"},"msg":"loading"}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"NestApplication","msg":"Nest application successfully started","dd":{"service":"shop"}}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","msg":"user 42","dd":{"trace_id":"ID1","span_id":"ID2","service":"shop"}}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","msg":"loading","dd":{"trace_id":"ID1","span_id":"ID3","service":"shop"}}
+{"level":50,"time":T,"pid":P,"hostname":H,"context":"ExceptionsHandler","msg":"kaboom","dd":{"trace_id":"ID4","span_id":"ID5","service":"shop"}}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","msg":"user 1","dd":{"trace_id":"ID6","span_id":"ID7","service":"shop"}}
+{"level":30,"time":T,"pid":P,"hostname":H,"context":"Users","msg":"loading","dd":{"trace_id":"ID6","span_id":"ID8","service":"shop"}}
 web.request [server] resource="GET /users/:id" type=web component=express
   http.method=GET
   http.route=/users/:id

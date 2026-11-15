@@ -61,9 +61,11 @@ nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth
 apm-dd tests/apm/dd/run.sh ^ok:
 apm-dd-redis tests/apm/dd-redis/run.sh
+apm-dd-logs tests/apm/dd-logs/run.sh ^ok:.dd-trace.log
 apm-http tests/apm/http/run.sh ^ok:
 apm-elastic tests/apm/elastic/run.sh ^ok:.elastic-apm-node
 apm-newrelic tests/apm/newrelic/run.sh ^ok:.newrelic
+apm-newrelic-logs tests/apm/newrelic-logs/run.sh ^ok:.newrelic.logs
 apm-otel tests/apm/otel/run.sh ^ok:.otel
 apm-resilience tests/apm/resilience/run.sh ^ok:.resilience
 apm-dynatrace tests/apm/dynatrace/run.sh ^ok:.dynatrace
