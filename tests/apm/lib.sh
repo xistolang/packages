@@ -12,7 +12,7 @@ collectors() {
   trap 'kill $CPID 2>/dev/null' EXIT
   i=0
   until grep -q ready "$OUT/$1-collectors.txt" 2>/dev/null; do
-    i=$((i + 1)); [ $i -gt 50 ] && { echo "FAIL: the fake collectors did not start: $(cat "$OUT/$1-collectors.txt")"; exit 1; }
+    i=$((i + 1)); [ $i -gt 300 ] && { echo "FAIL: the fake collectors did not start: $(cat "$OUT/$1-collectors.txt")"; exit 1; }
     sleep 0.1
   done
 }

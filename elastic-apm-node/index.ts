@@ -473,7 +473,7 @@ export class ElasticExporter implements ApmExporter {
     if (this.auth.length > 0) h["Authorization"] = this.auth;
     try {
       Apm.skipNextFetch(); // (its own request is not traced, as the agent's)
-      await fetch(this.url, { method: "POST", headers: h, body: body });
+      await fetch(this.url, { method: "POST", headers: h, body: body, signal: AbortSignal.timeout(Apm.timeoutMs()) });
     } catch (err) {
       // (an APM Server that is down loses this batch, as the agent does)
     }

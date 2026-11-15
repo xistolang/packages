@@ -96,3 +96,33 @@ XS_NOINLINE xs_str *xn_xisto_apm_hostname(void) {
     b[sizeof b - 1] = 0;
     return xs_str_new(b, strlen(b));
 }
+
+/* udpSend(host, port, payload): one datagram (DogStatsD to the Datadog Agent), from one socket kept open, never
+   blocking: a full buffer or an unknown host loses this payload, as statsd clients do; false then */
+static int xn_apm_udp_fd = -1;
+static char xn_apm_udp_host[256];
+static int xn_apm_udp_port;
+static struct sockaddr_storage xn_apm_udp_addr;
+static socklen_t xn_apm_udp_alen;
+XS_NOINLINE bool xn_xisto_apm_udpSend(xs_str *host, int64_t port, xs_str *payload) {
+    if (host->len <= 0 || host->len >= (int64_t)sizeof xn_apm_udp_host) return false;
+    if (xn_apm_udp_fd < 0 || port != xn_apm_udp_port || strncmp(xn_apm_udp_host, host->data, (size_t)host->len) != 0 || xn_apm_udp_host[host->len] != 0) {
+        struct addrinfo hints = {0}, *res = NULL;
+        hints.ai_socktype = SOCK_DGRAM;
+        char h[256], p[16];
+        memcpy(h, host->data, (size_t)host->len);
+        h[host->len] = 0;
+        snprintf(p, sizeof p, "%d", (int)port);
+        if (getaddrinfo(h, p, &hints, &res) != 0 || !res) return false;
+        if (xn_apm_udp_fd >= 0) close(xn_apm_udp_fd);
+        xn_apm_udp_fd = socket(res->ai_family, SOCK_DGRAM, 0);
+        if (xn_apm_udp_fd < 0) { freeaddrinfo(res); return false; }
+        fcntl(xn_apm_udp_fd, F_SETFL, O_NONBLOCK);
+        memcpy(&xn_apm_udp_addr, res->ai_addr, res->ai_addrlen);
+        xn_apm_udp_alen = res->ai_addrlen;
+        freeaddrinfo(res);
+        memcpy(xn_apm_udp_host, h, (size_t)host->len + 1);
+        xn_apm_udp_port = (int)port;
+    }
+    return sendto(xn_apm_udp_fd, payload->data, (size_t)payload->len, 0, (struct sockaddr *)&xn_apm_udp_addr, xn_apm_udp_alen) == (ssize_t)payload->len;
+}

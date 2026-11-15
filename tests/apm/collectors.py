@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 # Fake APM collectors for the tests: a Datadog Agent (PUT/POST /v0.4/traces, msgpack or JSON), an Elastic APM Server
-# (POST /intake/v2/events, ndjson, gzip or deflate or plain) and an OTLP/HTTP receiver (POST /v1/traces, JSON).
+# (POST /intake/v2/events, ndjson, gzip or deflate or plain) and an OTLP/HTTP receiver (POST /v1/traces, JSON; also
+# /v1/metrics and /v1/logs, recorded as kind "otlp-metrics" and "otlp-logs").
 # Every payload received is appended, decoded, as one JSON line to OUT ({"kind": "dd" | "elastic" | "otlp", ...}).
 # usage: collectors.py OUT DD_PORT ELASTIC_PORT OTLP_PORT   (prints "ready" when listening)
 import gzip, json, sys, threading, zlib
@@ -108,6 +109,9 @@ def make_handler(kind):
             if kind == "otlp" and path == "/v1/traces":
                 record({"kind": "otlp", "headers": hdr, "body": json.loads(data or b"{}")})
                 return self.reply(200, {})
+            if kind == "otlp" and path in ("/v1/metrics", "/v1/logs"):
+                record({"kind": "otlp-" + path[4:], "headers": hdr, "body": json.loads(data or b"{}")})
+                return self.reply(200, {})
             self.reply(404 if kind != "dd" else 200, {})
 
         do_POST = handle_any
@@ -116,9 +120,18 @@ def make_handler(kind):
     return H
 
 
+class Server(ThreadingHTTPServer):
+    # HTTPServer.server_bind calls socket.getfqdn(): a reverse DNS lookup that takes seconds on some CI machines
+    # (GitHub's macOS runners) and that nothing here needs
+    def server_bind(self):
+        import socketserver
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = "127.0.0.1", self.server_address[1]
+
+
 servers = []
 for kind, port in (("dd", int(sys.argv[2])), ("elastic", int(sys.argv[3])), ("otlp", int(sys.argv[4]))):
-    s = ThreadingHTTPServer(("127.0.0.1", port), make_handler(kind))
+    s = Server(("127.0.0.1", port), make_handler(kind))
     threading.Thread(target=s.serve_forever, daemon=True).start()
     servers.append(s)
 print("ready", flush=True)
