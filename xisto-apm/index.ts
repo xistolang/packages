@@ -548,6 +548,8 @@ function attrNum(key: string, value: number): string {
 // The spans keep the Datadog-style model the instrumentations fill (http.method, http.url, db.type, out.host...);
 // OTLP backends read OpenTelemetry's conventions instead (New Relic's Transactions, Databases and External services
 // pages, Dynatrace's services): otelName/otelAttrs translate one span, and the same view feeds the metrics below.
+// Only the stable conventions (db.system.name, db.operation.name, db.collection.name, db.query.text): with the older
+// db.system & co on the spans too, New Relic derived each database call twice (from the metric and from the span).
 
 /** db.type (Datadog's) to db.system (OpenTelemetry's) */
 function dbSystem(t: string): string {
@@ -623,22 +625,17 @@ function otelAttrs(s: ApmSpan): string[] {
   }
   if (isDb(s)) {
     const sys = dbSystem(s.tags.get("db.type") ?? "");
-    out.push(attr("db.system", sys));
     out.push(attr("db.system.name", sys));
     const q = s.resource;
     if (sys !== "redis" && sys !== "mongodb") {
       const op = sqlOperation(q);
       const table = sqlTable(q);
       if (q.length > 0) out.push(attr("db.query.text", q));
-      if (q.length > 0) out.push(attr("db.statement", q));
-      if (op.length > 0) out.push(attr("db.operation", op));
       if (op.length > 0) out.push(attr("db.operation.name", op));
-      if (table.length > 0) out.push(attr("db.sql.table", table));
       if (table.length > 0) out.push(attr("db.collection.name", table));
     } else if (q.length > 0) {
       const sp = q.indexOf(" ");
       const op = sp > 0 ? q.slice(0, sp) : q;
-      out.push(attr("db.operation", op));
       out.push(attr("db.operation.name", op));
       if (sys === "mongodb" && sp > 0) {
         const ns = q.slice(sp + 1);
@@ -727,17 +724,15 @@ export class ApmOtlpMetrics {
     }
     if (isDb(s)) {
       const sys = dbSystem(s.tags.get("db.type") ?? "");
-      const a: string[] = [attr("db.system.name", sys), attr("db.system", sys)];
+      const a: string[] = [attr("db.system.name", sys)];
       const q = s.resource;
       const op = sys === "redis" || sys === "mongodb" ? (q.indexOf(" ") > 0 ? q.slice(0, q.indexOf(" ")) : q) : sqlOperation(q);
       const table = sys === "redis" ? "" : sys === "mongodb" ? (q.indexOf(".") > 0 ? q.slice(q.indexOf(".") + 1) : "") : sqlTable(q);
       if (op.length > 0) {
         a.push(attr("db.operation.name", op));
-        a.push(attr("db.operation", op));
       }
       if (table.length > 0) {
         a.push(attr("db.collection.name", table));
-        a.push(attr("db.sql.table", table));
       }
       const host = s.tags.get("out.host") ?? "";
       if (host.length > 0) a.push(attr("server.address", host));
