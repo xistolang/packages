@@ -67,15 +67,6 @@ interface PinoState {
   contextKey: string;
 }
 
-class PinoLine {
-  level: int;
-  time: number;
-  pid: int;
-  hostname: string;
-  context?: string;
-  msg: string;
-}
-
 // @elastic/ecs-pino-format's line: {"log.level","@timestamp","process.pid","host.hostname","ecs.version",
 // "service.name","event.dataset", the context, "message"}
 // a logger call's own fields ({ "http.status": 200 }), as pino merges them into the line: ',"k":v' each
@@ -148,19 +139,14 @@ function writeLine(level: string, message: string | null, context: string, extra
     console.log(ecsLine(level, message, context, extra, tail));
     return;
   }
-  if (withFields || message === null || tail.length > 0) { // pino's line with the call's fields before msg
+  { // pino's line: the context and the call's fields before msg, written in that order (JSON of an object keeps
+    // the order its fields were set in, as on Node)
     let text = `{"level":${n},"time":${Date.now()},"pid":${process.pid},"hostname":${JSON.stringify(pinoHostname())}`;
     if (context.length > 0) {
       text += `,"context":${JSON.stringify(context)}`;
     }
     console.log(text + extra + (message === null ? "" : `,"msg":${JSON.stringify(message)}`) + tail + "}");
-    return;
   }
-  const line: PinoLine = { level: n, time: Date.now(), pid: process.pid, hostname: pinoHostname(), msg: message };
-  if (context.length > 0) {
-    line.context = context;
-  }
-  console.log(JSON.stringify(line));
 }
 
 /**
