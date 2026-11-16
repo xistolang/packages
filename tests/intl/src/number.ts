@@ -33,10 +33,10 @@ console.log(r.locale, r.style, r.currency, r.minimumFractionDigits, r.maximumFra
 try {
   new Intl.NumberFormat("pt-BR", { style: "currency" });
 } catch (e) {
-  console.log("error:", (e as Error).message);
+  console.log("error:", (e as Error).name, (e as Error).message, e instanceof RangeError, e instanceof TypeError);
 }
 try {
   new Intl.NumberFormat("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 1 });
 } catch (e) {
-  console.log("error:", (e as Error).message);
+  console.log("error:", (e as Error).name, (e as Error).message, e instanceof RangeError, e instanceof TypeError);
 }

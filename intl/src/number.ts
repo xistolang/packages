@@ -26,7 +26,7 @@ export interface Intl_ResolvedNumberFormatOptions {
 
 function digitOption(name: string, v: number | undefined, min: int, max: int, fallback: int): int {
   if (v === undefined || v === null) return fallback;
-  if (!(v >= min && v <= max)) throw new Error(name + " value is out of range.");
+  if (!(v >= min && v <= max)) throw new RangeError(name + " value is out of range.");
   return Math.floor(v);
 }
 
@@ -100,9 +100,9 @@ export class Intl_NumberFormat {
     let maxDefault = 3;
     if (style === "currency") {
       const given = o.currency ?? "";
-      if (given === "") throw new Error("Currency code is required with currency style.");
+      if (given === "") throw new TypeError("Currency code is required with currency style.");
       const code = currencyCode(given);
-      if (code === "") throw new Error("Invalid currency code : " + given);
+      if (code === "") throw new RangeError("Invalid currency code : " + given);
       this.currency = code;
       fracDefault = currencyDigits(code);
       maxDefault = fracDefault;
@@ -116,7 +116,7 @@ export class Intl_NumberFormat {
       this.shift = 2;
       maxDefault = 0;
     } else if (style !== "decimal") {
-      throw new Error("Value " + style + " out of range for Intl.NumberFormat options property style");
+      throw new RangeError("Value " + style + " out of range for Intl.NumberFormat options property style");
     }
     const mi = o.minimumIntegerDigits;
     this.minInt = mi === undefined || mi === null ? 1 : digitOption("minimumIntegerDigits", mi, 1, 21, 1);
@@ -129,7 +129,7 @@ export class Intl_NumberFormat {
       this.maxFrac = digitOption("maximumFractionDigits", mx, 0, 100, -1);
       if (this.minFrac < 0) this.minFrac = Math.min(fracDefault, this.maxFrac);
       else if (this.maxFrac < 0) this.maxFrac = Math.max(maxDefault, this.minFrac);
-      else if (this.minFrac > this.maxFrac) throw new Error("maximumFractionDigits value is out of range.");
+      else if (this.minFrac > this.maxFrac) throw new RangeError("maximumFractionDigits value is out of range.");
     }
     this.grouping = o.useGrouping ?? true;
   }

@@ -49,13 +49,13 @@ function dateTimeStyles(): string[] {
 function styleIndex(name: string, v: string | undefined): int {
   if (v === undefined || v === null) return -1;
   const i = dateTimeStyles().indexOf(v);
-  if (i < 0) throw new Error("Value " + v + " out of range for Intl.DateTimeFormat options property " + name);
+  if (i < 0) throw new RangeError("Value " + v + " out of range for Intl.DateTimeFormat options property " + name);
   return i;
 }
 
 function fieldOption(name: string, v: string | undefined, allowed: string[]): string {
   if (v === undefined || v === null) return "";
-  if (allowed.indexOf(v) < 0) throw new Error("Value " + v + " out of range for Intl.DateTimeFormat options property " + name);
+  if (allowed.indexOf(v) < 0) throw new RangeError("Value " + v + " out of range for Intl.DateTimeFormat options property " + name);
   return v;
 }
 
@@ -189,9 +189,9 @@ export class Intl_DateTimeFormat {
     const hasTime = hour !== "" || minute !== "" || second !== "";
     let pattern = "";
     if (ds >= 0 || ts >= 0) {
-      if (hasDate || hasTime || zoneName !== "") throw new Error("Can't set option " + (hasDate ? "date fields" : hasTime ? "time fields" : "timeZoneName") + " when " + (ds >= 0 ? "dateStyle" : "timeStyle") + " is used");
-      if (kind === "date" && ds < 0) throw new Error("Invalid option : timeStyle");
-      if (kind === "time" && ts < 0) throw new Error("Invalid option : dateStyle");
+      if (hasDate || hasTime || zoneName !== "") throw new TypeError("Invalid option : option"); // (Node 26's message)
+      if (kind === "date" && ds < 0) throw new TypeError("Invalid option : timeStyle");
+      if (kind === "time" && ts < 0) throw new TypeError("Invalid option : dateStyle");
       // the style patterns (data/datetime.ts, dtStyle): 0-3 dateStyle, 4-7 timeStyle h12, 8-11 h23, 12-15 their glue
       const dslot: int = ds >= 0 ? ds : -1;
       const tslot: int = ts >= 0 ? 4 + mode * 4 + ts : -1;
@@ -287,7 +287,7 @@ export class Intl_DateTimeFormat {
 
   formatToParts(date: Date): Intl_DateTimeFormatPart[] {
     const ms = date.getTime();
-    if (isNaN(ms)) throw new Error("Invalid time value");
+    if (isNaN(ms)) throw new RangeError("Invalid time value");
     let yy: int = 0;
     let mo: int = 0;
     let dd: int = 0;

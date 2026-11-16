@@ -37,3 +37,17 @@ const byType: Record<string, string> = {};
 for (const p of new Intl.DateTimeFormat("en-US", { timeZone: "UTC", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" }).formatToParts(new Date(instants[1]))) byType[p.type] = p.value;
 console.log(`${byType["year"]}-${byType["month"]}-${byType["day"]} ${byType["hour"]}:${byType["minute"]}:${byType["second"]}`);
 console.log(new Intl.DateTimeFormat("pt-BR", { timeZone: "America/Sao_Paulo" }).resolvedOptions().timeZone);
+// errors: Node's class and message
+const bad: Intl.DateTimeFormatOptions[] = [{ dateStyle: "short", year: "numeric" }, { weekday: "x" }, { dateStyle: "x" }];
+for (const o of bad) {
+  try {
+    new Intl.DateTimeFormat("pt-BR", o);
+  } catch (e) {
+    console.log("error:", (e as Error).name, (e as Error).message, e instanceof RangeError, e instanceof TypeError);
+  }
+}
+try {
+  new Intl.DateTimeFormat("pt-BR").format(new Date(NaN));
+} catch (e) {
+  console.log("error:", (e as Error).name, (e as Error).message, e instanceof RangeError);
+}

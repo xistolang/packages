@@ -369,3 +369,7 @@ Friday, January 15, 2016 | 15/01/2016, 07:30:00
 [{"type":"day","value":"05"},{"type":"literal","value":" de "},{"type":"month","value":"março"},{"type":"literal","value":" às "},{"type":"hour","value":"11"},{"type":"literal","value":":"},{"type":"minute","value":"07"}]
 2026-11-12 02:03:04
 America/Sao_Paulo
+error: TypeError Invalid option : option false true
+error: RangeError Value x out of range for Intl.DateTimeFormat options property weekday true false
+error: RangeError Value x out of range for Intl.DateTimeFormat options property dateStyle true false
+error: RangeError Invalid time value true

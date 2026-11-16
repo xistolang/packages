@@ -49,5 +49,5 @@ en-US {"style":"currency","currency":"XYZ"} XYZ 1,234.50 -XYZ 0.13 XYZ 0.07
 R$ 1.999,90 1,999.9 26%
 42,00 1,234,567
 pt-BR currency BRL 2 2
-error: Currency code is required with currency style.
-error: maximumFractionDigits value is out of range.
+error: TypeError Currency code is required with currency style. false true
+error: RangeError maximumFractionDigits value is out of range. true false

@@ -171,7 +171,7 @@ export class Intl_Collator {
     this.usage = o.usage ?? "sort";
     this.sensitivity = o.sensitivity ?? "variant";
     const sens = this.sensitivity === "base" ? 1 : this.sensitivity === "accent" ? 2 : this.sensitivity === "variant" ? 3 : this.sensitivity === "case" ? 4 : 0;
-    if (sens === 0) throw new Error("Value " + this.sensitivity + " out of range for Intl.Collator options property sensitivity");
+    if (sens === 0) throw new RangeError("Value " + this.sensitivity + " out of range for Intl.Collator options property sensitivity");
     this.numeric = o.numeric ?? false;
     this.caseFirst = o.caseFirst ?? "false";
     this.ignorePunctuation = o.ignorePunctuation ?? false;

@@ -24,7 +24,7 @@ function check(what, got, exp) {
     if (bad <= +(process.env.MAXDIFF ?? 60)) console.log(`DIFF ${what}: xisto ${JSON.stringify(got)} node ${JSON.stringify(exp)}`);
   }
 }
-const run = (f) => { try { return f(); } catch { return "throws"; } }; // (the package throws Error where Node throws RangeError or TypeError)
+const run = (f) => { try { return f(); } catch (e) { return `throws ${e.constructor.name}: ${e.message}`; } }; // (the error's class and message too)
 
 if (want("number")) {
   const values = [0, -0, 1, -1, 5, 0.5, 1.005, 2.5, -2.5, 0.07, 0.125, 1234, 12345, 123456.789, -1234.5678, 1e21, 1.5e-7, 9.995, 99.995,
