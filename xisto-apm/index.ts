@@ -11,8 +11,8 @@
 // string tags, number tags, an error and its times (nanoseconds). The active span follows the asynchronous flow
 // (AsyncLocalStorage). A trace is exported once all its spans have ended, by the exporter the agent registered, in
 // batches: every 2 s (an unref'd timer), at 1000 spans, and before the program exits.
-import { AsyncLocalStorage } from "node:async_hooks";
-import dc from "node:diagnostics_channel";
+import { AsyncLocalStorage } from "xisto:async_hooks";
+import * as dc from "xisto:diagnostics_channel";
 
 declare function isPromise(v: unknown): boolean;
 declare function onSettle(p: unknown, cb: (failed: boolean, err: Error | null) => void): void;

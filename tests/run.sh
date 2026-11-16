@@ -37,6 +37,9 @@ OUT=$ROOT/build/tests
 mkdir -p "$OUT"
 echo "xisto: $XISTO ($("$XISTO" --version 2>/dev/null || echo 'unknown version'))"
 echo "packages: $XISTO_PKGS"
+# the packages themselves build without XISTO_NODE_COMPAT (a user's project does not set it): xisto:* names only
+nodeimp=$(grep -rlE "from ['\"]node:|require\(['\"]node:" --include='*.ts' . | grep -vE '^\./(tests|examples|build)/|/node_modules/')
+if [ -n "$nodeimp" ]; then echo "FAIL: a package imports node:* (use xisto:*, as a project without --node-compat needs):"; echo "$nodeimp"; exit 1; fi
 
 # NAME SCRIPT [PATTERN]: the script must exit 0 and, with a PATTERN, print a line that matches it
 TESTS="

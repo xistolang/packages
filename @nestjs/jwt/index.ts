@@ -2,7 +2,7 @@
 // as jsonwebtoken 9 does (iat, exp from expiresIn, nbf, iss/aud/sub; the same error names and messages).
 // Compatibility: HMAC algorithms only (HS256, HS384, HS512); RS256 keys go through passport-jwt / jose.
 import { DynamicModule, FactoryProvider, Inject, Injectable, Module, Optional, ValueProvider } from "@nestjs/common";
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "xisto:crypto";
 
 export const JWT_MODULE_OPTIONS = "JWT_MODULE_OPTIONS";
 

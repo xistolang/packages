@@ -11,8 +11,8 @@
 // No code hotspots (span ids on samples), no endpoint counts. gzip, as dd-trace on Node before 24 (zstd since).
 // Not on Windows (xisto:profiler has no sampler there: the profiler does not start). The upload at exit is not sent.
 import { start as startSampling, collect as collectProfile, lastSamples } from "xisto:profiler";
-import { gzipSync } from "node:zlib";
-import { release, version, type, availableParallelism } from "node:os";
+import { gzipSync } from "xisto:zlib";
+import { release, version, type, availableParallelism } from "xisto:os";
 import { Apm, ApmServiceInfo, newId } from "xisto-apm";
 
 const TRACER_VERSION = "5.131.1";

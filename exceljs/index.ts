@@ -11,7 +11,7 @@
 //   (`addRow({ key: value })`, as exceljs).
 // - Styles cover what reports use: numFmt, font (bold, italic, size, name), alignment (horizontal, vertical,
 //   wrapText), column widths, frozen panes (views) and autoFilter.
-import { Writable } from "node:stream";
+import { Writable } from "xisto:stream";
 
 declare class NativeZip {
   constructor(path: string);
