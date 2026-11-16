@@ -27,7 +27,7 @@ function check(what, got, exp) {
 const run = (f) => { try { return f(); } catch (e) { return `throws ${e.constructor.name}: ${e.message}`; } }; // (the error's class and message too)
 
 if (want("number")) {
-  const values = [0, -0, 1, -1, 5, 0.5, 1.005, 2.5, -2.5, 0.07, 0.125, 1234, 12345, 123456.789, -1234.5678, 1e21, 1.5e-7, 9.995, 99.995,
+  const values = [2.675, -2.675, 1.0005, 0.0005, 1.45, 8.345, 1234.5675, 999.9995, 0.000125, 123456789.125, 1e15, 4503599627370495, 450359962737049.5, 45035996273704.95, 0.1 + 0.7, 1e-7, 5e-324, 1.7976931348623157e308, 99999.995, 0.045, 1.115, -0.005, 0, -0, 1, -1, 5, 0.5, 1.005, 2.5, -2.5, 0.07, 0.125, 1234, 12345, 123456.789, -1234.5678, 1e21, 1.5e-7, 9.995, 99.995,
     999999.9999, 0.0001, -0.0001, 123456789012345680000, NaN, Infinity, -Infinity, 1 / 3, 2 / 3, 0.1 + 0.2, 4.35, 1.45, 1e-10, 7e20];
   const opts = [{}, { style: "percent" }, { maximumFractionDigits: 0 }, { maximumFractionDigits: 2 }, { minimumFractionDigits: 2 },
     { minimumFractionDigits: 1, maximumFractionDigits: 4 }, { useGrouping: false }, { minimumIntegerDigits: 3 },
