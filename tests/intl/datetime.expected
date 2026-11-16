@@ -1,0 +1,371 @@
+pt-BR UTC {} 05/03/2026
+pt-BR UTC {"dateStyle":"full"} quinta-feira, 5 de março de 2026
+pt-BR UTC {"dateStyle":"long","timeStyle":"short"} 5 de março de 2026 às 14:07
+pt-BR UTC {"dateStyle":"medium","timeStyle":"medium"} 5 de mar. de 2026, 14:07:09
+pt-BR UTC {"dateStyle":"short","timeStyle":"long"} 05/03/2026, 14:07:09 UTC
+pt-BR UTC {"timeStyle":"full"} 14:07:09 Horário Universal Coordenado
+pt-BR UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 05/03/2026
+pt-BR UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} quinta-feira, 5 de março de 2026
+pt-BR UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 5 de mar., 14:07
+pt-BR UTC {"hour":"numeric","minute":"2-digit","hour12":true} 2:07 PM
+pt-BR UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 14:07:09
+pt-BR UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 05/03/2026, 14:07 UTC
+pt-BR UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} qui., 14 Horário Universal Coordenado
+pt-BR UTC {"month":"long","year":"numeric"} março de 2026
+pt-BR UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 14:07 GMT+0
+pt-BR America/Sao_Paulo {} 05/03/2026
+pt-BR America/Sao_Paulo {"dateStyle":"full"} quinta-feira, 5 de março de 2026
+pt-BR America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} 5 de março de 2026 às 11:07
+pt-BR America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} 5 de mar. de 2026, 11:07:09
+pt-BR America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 05/03/2026, 11:07:09 BRT
+pt-BR America/Sao_Paulo {"timeStyle":"full"} 11:07:09 Horário Padrão de Brasília
+pt-BR America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 05/03/2026
+pt-BR America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} quinta-feira, 5 de março de 2026
+pt-BR America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 5 de mar., 11:07
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 11:07 AM
+pt-BR America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 11:07:09
+pt-BR America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 05/03/2026, 11:07 BRT
+pt-BR America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} qui., 11 Horário Padrão de Brasília
+pt-BR America/Sao_Paulo {"month":"long","year":"numeric"} março de 2026
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 11:07 GMT-3
+pt-BR  {} 05/03/2026
+pt-BR  {"dateStyle":"full"} quinta-feira, 5 de março de 2026
+pt-BR  {"dateStyle":"long","timeStyle":"short"} 5 de março de 2026 às 09:07
+pt-BR  {"dateStyle":"medium","timeStyle":"medium"} 5 de mar. de 2026, 09:07:09
+pt-BR  {"dateStyle":"short","timeStyle":"long"} 05/03/2026, 09:07:09 GMT-5
+pt-BR  {"timeStyle":"full"} 09:07:09 Horário Padrão do Leste
+pt-BR  {"year":"numeric","month":"2-digit","day":"2-digit"} 05/03/2026
+pt-BR  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} quinta-feira, 5 de março de 2026
+pt-BR  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 5 de mar., 09:07
+pt-BR  {"hour":"numeric","minute":"2-digit","hour12":true} 9:07 AM
+pt-BR  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 09:07:09
+pt-BR  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 05/03/2026, 09:07 GMT-5
+pt-BR  {"weekday":"short","hour":"numeric","timeZoneName":"long"} qui., 09 Horário Padrão do Leste
+pt-BR  {"month":"long","year":"numeric"} março de 2026
+pt-BR  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 09:07 GMT-5
+en-US UTC {} 3/5/2026
+en-US UTC {"dateStyle":"full"} Thursday, March 5, 2026
+en-US UTC {"dateStyle":"long","timeStyle":"short"} March 5, 2026 at 2:07 PM
+en-US UTC {"dateStyle":"medium","timeStyle":"medium"} Mar 5, 2026, 2:07:09 PM
+en-US UTC {"dateStyle":"short","timeStyle":"long"} 3/5/26, 2:07:09 PM UTC
+en-US UTC {"timeStyle":"full"} 2:07:09 PM Coordinated Universal Time
+en-US UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 03/05/2026
+en-US UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Thursday, March 5, 2026
+en-US UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Mar 5, 02:07 PM
+en-US UTC {"hour":"numeric","minute":"2-digit","hour12":true} 2:07 PM
+en-US UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 14:07:09
+en-US UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 3/5/2026, 2:07 PM UTC
+en-US UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} Thu, 2 PM Coordinated Universal Time
+en-US UTC {"month":"long","year":"numeric"} March 2026
+en-US UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 2:07 PM GMT+0
+en-US America/Sao_Paulo {} 3/5/2026
+en-US America/Sao_Paulo {"dateStyle":"full"} Thursday, March 5, 2026
+en-US America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} March 5, 2026 at 11:07 AM
+en-US America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} Mar 5, 2026, 11:07:09 AM
+en-US America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 3/5/26, 11:07:09 AM GMT-3
+en-US America/Sao_Paulo {"timeStyle":"full"} 11:07:09 AM Brasilia Standard Time
+en-US America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 03/05/2026
+en-US America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Thursday, March 5, 2026
+en-US America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Mar 5, 11:07 AM
+en-US America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 11:07 AM
+en-US America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 11:07:09
+en-US America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 3/5/2026, 11:07 AM GMT-3
+en-US America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} Thu, 11 AM Brasilia Standard Time
+en-US America/Sao_Paulo {"month":"long","year":"numeric"} March 2026
+en-US America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 11:07 AM GMT-3
+en-US  {} 3/5/2026
+en-US  {"dateStyle":"full"} Thursday, March 5, 2026
+en-US  {"dateStyle":"long","timeStyle":"short"} March 5, 2026 at 9:07 AM
+en-US  {"dateStyle":"medium","timeStyle":"medium"} Mar 5, 2026, 9:07:09 AM
+en-US  {"dateStyle":"short","timeStyle":"long"} 3/5/26, 9:07:09 AM EST
+en-US  {"timeStyle":"full"} 9:07:09 AM Eastern Standard Time
+en-US  {"year":"numeric","month":"2-digit","day":"2-digit"} 03/05/2026
+en-US  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Thursday, March 5, 2026
+en-US  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Mar 5, 09:07 AM
+en-US  {"hour":"numeric","minute":"2-digit","hour12":true} 9:07 AM
+en-US  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 09:07:09
+en-US  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 3/5/2026, 9:07 AM EST
+en-US  {"weekday":"short","hour":"numeric","timeZoneName":"long"} Thu, 9 AM Eastern Standard Time
+en-US  {"month":"long","year":"numeric"} March 2026
+en-US  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 9:07 AM GMT-5
+05/03/2026 | 11:07:09 | 3/5/2026, 2:07:09 PM
+Thursday, March 5, 2026 | 05/03/2026, 09:07:09
+pt-BR UTC {} 12/11/2026
+pt-BR UTC {"dateStyle":"full"} quinta-feira, 12 de novembro de 2026
+pt-BR UTC {"dateStyle":"long","timeStyle":"short"} 12 de novembro de 2026 às 02:03
+pt-BR UTC {"dateStyle":"medium","timeStyle":"medium"} 12 de nov. de 2026, 02:03:04
+pt-BR UTC {"dateStyle":"short","timeStyle":"long"} 12/11/2026, 02:03:04 UTC
+pt-BR UTC {"timeStyle":"full"} 02:03:04 Horário Universal Coordenado
+pt-BR UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 12/11/2026
+pt-BR UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} quinta-feira, 12 de novembro de 2026
+pt-BR UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 12 de nov., 02:03
+pt-BR UTC {"hour":"numeric","minute":"2-digit","hour12":true} 2:03 AM
+pt-BR UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 02:03:04
+pt-BR UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 12/11/2026, 02:03 UTC
+pt-BR UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} qui., 02 Horário Universal Coordenado
+pt-BR UTC {"month":"long","year":"numeric"} novembro de 2026
+pt-BR UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 02:03 GMT+0
+pt-BR America/Sao_Paulo {} 11/11/2026
+pt-BR America/Sao_Paulo {"dateStyle":"full"} quarta-feira, 11 de novembro de 2026
+pt-BR America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} 11 de novembro de 2026 às 23:03
+pt-BR America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} 11 de nov. de 2026, 23:03:04
+pt-BR America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 11/11/2026, 23:03:04 BRT
+pt-BR America/Sao_Paulo {"timeStyle":"full"} 23:03:04 Horário Padrão de Brasília
+pt-BR America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 11/11/2026
+pt-BR America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} quarta-feira, 11 de novembro de 2026
+pt-BR America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 11 de nov., 23:03
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 11:03 PM
+pt-BR America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 23:03:04
+pt-BR America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 11/11/2026, 23:03 BRT
+pt-BR America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} qua., 23 Horário Padrão de Brasília
+pt-BR America/Sao_Paulo {"month":"long","year":"numeric"} novembro de 2026
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 23:03 GMT-3
+pt-BR  {} 11/11/2026
+pt-BR  {"dateStyle":"full"} quarta-feira, 11 de novembro de 2026
+pt-BR  {"dateStyle":"long","timeStyle":"short"} 11 de novembro de 2026 às 21:03
+pt-BR  {"dateStyle":"medium","timeStyle":"medium"} 11 de nov. de 2026, 21:03:04
+pt-BR  {"dateStyle":"short","timeStyle":"long"} 11/11/2026, 21:03:04 GMT-5
+pt-BR  {"timeStyle":"full"} 21:03:04 Horário Padrão do Leste
+pt-BR  {"year":"numeric","month":"2-digit","day":"2-digit"} 11/11/2026
+pt-BR  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} quarta-feira, 11 de novembro de 2026
+pt-BR  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 11 de nov., 21:03
+pt-BR  {"hour":"numeric","minute":"2-digit","hour12":true} 9:03 PM
+pt-BR  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 21:03:04
+pt-BR  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 11/11/2026, 21:03 GMT-5
+pt-BR  {"weekday":"short","hour":"numeric","timeZoneName":"long"} qua., 21 Horário Padrão do Leste
+pt-BR  {"month":"long","year":"numeric"} novembro de 2026
+pt-BR  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 21:03 GMT-5
+en-US UTC {} 11/12/2026
+en-US UTC {"dateStyle":"full"} Thursday, November 12, 2026
+en-US UTC {"dateStyle":"long","timeStyle":"short"} November 12, 2026 at 2:03 AM
+en-US UTC {"dateStyle":"medium","timeStyle":"medium"} Nov 12, 2026, 2:03:04 AM
+en-US UTC {"dateStyle":"short","timeStyle":"long"} 11/12/26, 2:03:04 AM UTC
+en-US UTC {"timeStyle":"full"} 2:03:04 AM Coordinated Universal Time
+en-US UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 11/12/2026
+en-US UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Thursday, November 12, 2026
+en-US UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Nov 12, 02:03 AM
+en-US UTC {"hour":"numeric","minute":"2-digit","hour12":true} 2:03 AM
+en-US UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 02:03:04
+en-US UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 11/12/2026, 2:03 AM UTC
+en-US UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} Thu, 2 AM Coordinated Universal Time
+en-US UTC {"month":"long","year":"numeric"} November 2026
+en-US UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 2:03 AM GMT+0
+en-US America/Sao_Paulo {} 11/11/2026
+en-US America/Sao_Paulo {"dateStyle":"full"} Wednesday, November 11, 2026
+en-US America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} November 11, 2026 at 11:03 PM
+en-US America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} Nov 11, 2026, 11:03:04 PM
+en-US America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 11/11/26, 11:03:04 PM GMT-3
+en-US America/Sao_Paulo {"timeStyle":"full"} 11:03:04 PM Brasilia Standard Time
+en-US America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 11/11/2026
+en-US America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Wednesday, November 11, 2026
+en-US America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Nov 11, 11:03 PM
+en-US America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 11:03 PM
+en-US America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 23:03:04
+en-US America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 11/11/2026, 11:03 PM GMT-3
+en-US America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} Wed, 11 PM Brasilia Standard Time
+en-US America/Sao_Paulo {"month":"long","year":"numeric"} November 2026
+en-US America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 11:03 PM GMT-3
+en-US  {} 11/11/2026
+en-US  {"dateStyle":"full"} Wednesday, November 11, 2026
+en-US  {"dateStyle":"long","timeStyle":"short"} November 11, 2026 at 9:03 PM
+en-US  {"dateStyle":"medium","timeStyle":"medium"} Nov 11, 2026, 9:03:04 PM
+en-US  {"dateStyle":"short","timeStyle":"long"} 11/11/26, 9:03:04 PM EST
+en-US  {"timeStyle":"full"} 9:03:04 PM Eastern Standard Time
+en-US  {"year":"numeric","month":"2-digit","day":"2-digit"} 11/11/2026
+en-US  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Wednesday, November 11, 2026
+en-US  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Nov 11, 09:03 PM
+en-US  {"hour":"numeric","minute":"2-digit","hour12":true} 9:03 PM
+en-US  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 21:03:04
+en-US  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 11/11/2026, 9:03 PM EST
+en-US  {"weekday":"short","hour":"numeric","timeZoneName":"long"} Wed, 9 PM Eastern Standard Time
+en-US  {"month":"long","year":"numeric"} November 2026
+en-US  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 9:03 PM GMT-5
+11/11/2026 | 23:03:04 | 11/12/2026, 2:03:04 AM
+Wednesday, November 11, 2026 | 11/11/2026, 21:03:04
+pt-BR UTC {} 01/01/2025
+pt-BR UTC {"dateStyle":"full"} quarta-feira, 1 de janeiro de 2025
+pt-BR UTC {"dateStyle":"long","timeStyle":"short"} 1 de janeiro de 2025 às 00:00
+pt-BR UTC {"dateStyle":"medium","timeStyle":"medium"} 1 de jan. de 2025, 00:00:00
+pt-BR UTC {"dateStyle":"short","timeStyle":"long"} 01/01/2025, 00:00:00 UTC
+pt-BR UTC {"timeStyle":"full"} 00:00:00 Horário Universal Coordenado
+pt-BR UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 01/01/2025
+pt-BR UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} quarta-feira, 1 de janeiro de 2025
+pt-BR UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 1 de jan., 00:00
+pt-BR UTC {"hour":"numeric","minute":"2-digit","hour12":true} 12:00 AM
+pt-BR UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 00:00:00
+pt-BR UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 01/01/2025, 00:00 UTC
+pt-BR UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} qua., 00 Horário Universal Coordenado
+pt-BR UTC {"month":"long","year":"numeric"} janeiro de 2025
+pt-BR UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 00:00 GMT+0
+pt-BR America/Sao_Paulo {} 31/12/2024
+pt-BR America/Sao_Paulo {"dateStyle":"full"} terça-feira, 31 de dezembro de 2024
+pt-BR America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} 31 de dezembro de 2024 às 21:00
+pt-BR America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} 31 de dez. de 2024, 21:00:00
+pt-BR America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 31/12/2024, 21:00:00 BRT
+pt-BR America/Sao_Paulo {"timeStyle":"full"} 21:00:00 Horário Padrão de Brasília
+pt-BR America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 31/12/2024
+pt-BR America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} terça-feira, 31 de dezembro de 2024
+pt-BR America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 31 de dez., 21:00
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 9:00 PM
+pt-BR America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 21:00:00
+pt-BR America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 31/12/2024, 21:00 BRT
+pt-BR America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} ter., 21 Horário Padrão de Brasília
+pt-BR America/Sao_Paulo {"month":"long","year":"numeric"} dezembro de 2024
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 21:00 GMT-3
+pt-BR  {} 31/12/2024
+pt-BR  {"dateStyle":"full"} terça-feira, 31 de dezembro de 2024
+pt-BR  {"dateStyle":"long","timeStyle":"short"} 31 de dezembro de 2024 às 19:00
+pt-BR  {"dateStyle":"medium","timeStyle":"medium"} 31 de dez. de 2024, 19:00:00
+pt-BR  {"dateStyle":"short","timeStyle":"long"} 31/12/2024, 19:00:00 GMT-5
+pt-BR  {"timeStyle":"full"} 19:00:00 Horário Padrão do Leste
+pt-BR  {"year":"numeric","month":"2-digit","day":"2-digit"} 31/12/2024
+pt-BR  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} terça-feira, 31 de dezembro de 2024
+pt-BR  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 31 de dez., 19:00
+pt-BR  {"hour":"numeric","minute":"2-digit","hour12":true} 7:00 PM
+pt-BR  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 19:00:00
+pt-BR  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 31/12/2024, 19:00 GMT-5
+pt-BR  {"weekday":"short","hour":"numeric","timeZoneName":"long"} ter., 19 Horário Padrão do Leste
+pt-BR  {"month":"long","year":"numeric"} dezembro de 2024
+pt-BR  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 19:00 GMT-5
+en-US UTC {} 1/1/2025
+en-US UTC {"dateStyle":"full"} Wednesday, January 1, 2025
+en-US UTC {"dateStyle":"long","timeStyle":"short"} January 1, 2025 at 12:00 AM
+en-US UTC {"dateStyle":"medium","timeStyle":"medium"} Jan 1, 2025, 12:00:00 AM
+en-US UTC {"dateStyle":"short","timeStyle":"long"} 1/1/25, 12:00:00 AM UTC
+en-US UTC {"timeStyle":"full"} 12:00:00 AM Coordinated Universal Time
+en-US UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 01/01/2025
+en-US UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Wednesday, January 1, 2025
+en-US UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Jan 1, 12:00 AM
+en-US UTC {"hour":"numeric","minute":"2-digit","hour12":true} 12:00 AM
+en-US UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 00:00:00
+en-US UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 1/1/2025, 12:00 AM UTC
+en-US UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} Wed, 12 AM Coordinated Universal Time
+en-US UTC {"month":"long","year":"numeric"} January 2025
+en-US UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 12:00 AM GMT+0
+en-US America/Sao_Paulo {} 12/31/2024
+en-US America/Sao_Paulo {"dateStyle":"full"} Tuesday, December 31, 2024
+en-US America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} December 31, 2024 at 9:00 PM
+en-US America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} Dec 31, 2024, 9:00:00 PM
+en-US America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 12/31/24, 9:00:00 PM GMT-3
+en-US America/Sao_Paulo {"timeStyle":"full"} 9:00:00 PM Brasilia Standard Time
+en-US America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 12/31/2024
+en-US America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Tuesday, December 31, 2024
+en-US America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Dec 31, 09:00 PM
+en-US America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 9:00 PM
+en-US America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 21:00:00
+en-US America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 12/31/2024, 9:00 PM GMT-3
+en-US America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} Tue, 9 PM Brasilia Standard Time
+en-US America/Sao_Paulo {"month":"long","year":"numeric"} December 2024
+en-US America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 9:00 PM GMT-3
+en-US  {} 12/31/2024
+en-US  {"dateStyle":"full"} Tuesday, December 31, 2024
+en-US  {"dateStyle":"long","timeStyle":"short"} December 31, 2024 at 7:00 PM
+en-US  {"dateStyle":"medium","timeStyle":"medium"} Dec 31, 2024, 7:00:00 PM
+en-US  {"dateStyle":"short","timeStyle":"long"} 12/31/24, 7:00:00 PM EST
+en-US  {"timeStyle":"full"} 7:00:00 PM Eastern Standard Time
+en-US  {"year":"numeric","month":"2-digit","day":"2-digit"} 12/31/2024
+en-US  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Tuesday, December 31, 2024
+en-US  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Dec 31, 07:00 PM
+en-US  {"hour":"numeric","minute":"2-digit","hour12":true} 7:00 PM
+en-US  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 19:00:00
+en-US  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 12/31/2024, 7:00 PM EST
+en-US  {"weekday":"short","hour":"numeric","timeZoneName":"long"} Tue, 7 PM Eastern Standard Time
+en-US  {"month":"long","year":"numeric"} December 2024
+en-US  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 7:00 PM GMT-5
+31/12/2024 | 21:00:00 | 1/1/2025, 12:00:00 AM
+Tuesday, December 31, 2024 | 31/12/2024, 19:00:00
+pt-BR UTC {} 15/01/2016
+pt-BR UTC {"dateStyle":"full"} sexta-feira, 15 de janeiro de 2016
+pt-BR UTC {"dateStyle":"long","timeStyle":"short"} 15 de janeiro de 2016 às 12:30
+pt-BR UTC {"dateStyle":"medium","timeStyle":"medium"} 15 de jan. de 2016, 12:30:00
+pt-BR UTC {"dateStyle":"short","timeStyle":"long"} 15/01/2016, 12:30:00 UTC
+pt-BR UTC {"timeStyle":"full"} 12:30:00 Horário Universal Coordenado
+pt-BR UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 15/01/2016
+pt-BR UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} sexta-feira, 15 de janeiro de 2016
+pt-BR UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 15 de jan., 12:30
+pt-BR UTC {"hour":"numeric","minute":"2-digit","hour12":true} 12:30 PM
+pt-BR UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 12:30:00
+pt-BR UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 15/01/2016, 12:30 UTC
+pt-BR UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} sex., 12 Horário Universal Coordenado
+pt-BR UTC {"month":"long","year":"numeric"} janeiro de 2016
+pt-BR UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 12:30 GMT+0
+pt-BR America/Sao_Paulo {} 15/01/2016
+pt-BR America/Sao_Paulo {"dateStyle":"full"} sexta-feira, 15 de janeiro de 2016
+pt-BR America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} 15 de janeiro de 2016 às 10:30
+pt-BR America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} 15 de jan. de 2016, 10:30:00
+pt-BR America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 15/01/2016, 10:30:00 BRST
+pt-BR America/Sao_Paulo {"timeStyle":"full"} 10:30:00 Horário de Verão de Brasília
+pt-BR America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 15/01/2016
+pt-BR America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} sexta-feira, 15 de janeiro de 2016
+pt-BR America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 15 de jan., 10:30
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 10:30 AM
+pt-BR America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 10:30:00
+pt-BR America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 15/01/2016, 10:30 BRST
+pt-BR America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} sex., 10 Horário de Verão de Brasília
+pt-BR America/Sao_Paulo {"month":"long","year":"numeric"} janeiro de 2016
+pt-BR America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 10:30 GMT-2
+pt-BR  {} 15/01/2016
+pt-BR  {"dateStyle":"full"} sexta-feira, 15 de janeiro de 2016
+pt-BR  {"dateStyle":"long","timeStyle":"short"} 15 de janeiro de 2016 às 07:30
+pt-BR  {"dateStyle":"medium","timeStyle":"medium"} 15 de jan. de 2016, 07:30:00
+pt-BR  {"dateStyle":"short","timeStyle":"long"} 15/01/2016, 07:30:00 GMT-5
+pt-BR  {"timeStyle":"full"} 07:30:00 Horário Padrão do Leste
+pt-BR  {"year":"numeric","month":"2-digit","day":"2-digit"} 15/01/2016
+pt-BR  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} sexta-feira, 15 de janeiro de 2016
+pt-BR  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} 15 de jan., 07:30
+pt-BR  {"hour":"numeric","minute":"2-digit","hour12":true} 7:30 AM
+pt-BR  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 07:30:00
+pt-BR  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 15/01/2016, 07:30 GMT-5
+pt-BR  {"weekday":"short","hour":"numeric","timeZoneName":"long"} sex., 07 Horário Padrão do Leste
+pt-BR  {"month":"long","year":"numeric"} janeiro de 2016
+pt-BR  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 07:30 GMT-5
+en-US UTC {} 1/15/2016
+en-US UTC {"dateStyle":"full"} Friday, January 15, 2016
+en-US UTC {"dateStyle":"long","timeStyle":"short"} January 15, 2016 at 12:30 PM
+en-US UTC {"dateStyle":"medium","timeStyle":"medium"} Jan 15, 2016, 12:30:00 PM
+en-US UTC {"dateStyle":"short","timeStyle":"long"} 1/15/16, 12:30:00 PM UTC
+en-US UTC {"timeStyle":"full"} 12:30:00 PM Coordinated Universal Time
+en-US UTC {"year":"numeric","month":"2-digit","day":"2-digit"} 01/15/2016
+en-US UTC {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Friday, January 15, 2016
+en-US UTC {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Jan 15, 12:30 PM
+en-US UTC {"hour":"numeric","minute":"2-digit","hour12":true} 12:30 PM
+en-US UTC {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 12:30:00
+en-US UTC {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 1/15/2016, 12:30 PM UTC
+en-US UTC {"weekday":"short","hour":"numeric","timeZoneName":"long"} Fri, 12 PM Coordinated Universal Time
+en-US UTC {"month":"long","year":"numeric"} January 2016
+en-US UTC {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 12:30 PM GMT+0
+en-US America/Sao_Paulo {} 1/15/2016
+en-US America/Sao_Paulo {"dateStyle":"full"} Friday, January 15, 2016
+en-US America/Sao_Paulo {"dateStyle":"long","timeStyle":"short"} January 15, 2016 at 10:30 AM
+en-US America/Sao_Paulo {"dateStyle":"medium","timeStyle":"medium"} Jan 15, 2016, 10:30:00 AM
+en-US America/Sao_Paulo {"dateStyle":"short","timeStyle":"long"} 1/15/16, 10:30:00 AM GMT-2
+en-US America/Sao_Paulo {"timeStyle":"full"} 10:30:00 AM Brasilia Summer Time
+en-US America/Sao_Paulo {"year":"numeric","month":"2-digit","day":"2-digit"} 01/15/2016
+en-US America/Sao_Paulo {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Friday, January 15, 2016
+en-US America/Sao_Paulo {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Jan 15, 10:30 AM
+en-US America/Sao_Paulo {"hour":"numeric","minute":"2-digit","hour12":true} 10:30 AM
+en-US America/Sao_Paulo {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 10:30:00
+en-US America/Sao_Paulo {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 1/15/2016, 10:30 AM GMT-2
+en-US America/Sao_Paulo {"weekday":"short","hour":"numeric","timeZoneName":"long"} Fri, 10 AM Brasilia Summer Time
+en-US America/Sao_Paulo {"month":"long","year":"numeric"} January 2016
+en-US America/Sao_Paulo {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 10:30 AM GMT-2
+en-US  {} 1/15/2016
+en-US  {"dateStyle":"full"} Friday, January 15, 2016
+en-US  {"dateStyle":"long","timeStyle":"short"} January 15, 2016 at 7:30 AM
+en-US  {"dateStyle":"medium","timeStyle":"medium"} Jan 15, 2016, 7:30:00 AM
+en-US  {"dateStyle":"short","timeStyle":"long"} 1/15/16, 7:30:00 AM EST
+en-US  {"timeStyle":"full"} 7:30:00 AM Eastern Standard Time
+en-US  {"year":"numeric","month":"2-digit","day":"2-digit"} 01/15/2016
+en-US  {"year":"numeric","month":"long","day":"numeric","weekday":"long"} Friday, January 15, 2016
+en-US  {"month":"short","day":"numeric","hour":"2-digit","minute":"2-digit"} Jan 15, 07:30 AM
+en-US  {"hour":"numeric","minute":"2-digit","hour12":true} 7:30 AM
+en-US  {"hour":"2-digit","minute":"2-digit","second":"2-digit","hour12":false} 07:30:00
+en-US  {"year":"numeric","month":"numeric","day":"numeric","hour":"numeric","minute":"numeric","timeZoneName":"short"} 1/15/2016, 7:30 AM EST
+en-US  {"weekday":"short","hour":"numeric","timeZoneName":"long"} Fri, 7 AM Eastern Standard Time
+en-US  {"month":"long","year":"numeric"} January 2016
+en-US  {"hour":"numeric","minute":"numeric","timeZoneName":"shortOffset"} 7:30 AM GMT-5
+15/01/2016 | 10:30:00 | 1/15/2016, 12:30:00 PM
+Friday, January 15, 2016 | 15/01/2016, 07:30:00
+[{"type":"day","value":"05"},{"type":"literal","value":" de "},{"type":"month","value":"março"},{"type":"literal","value":" às "},{"type":"hour","value":"11"},{"type":"literal","value":":"},{"type":"minute","value":"07"}]
+2026-11-12 02:03:04
+America/Sao_Paulo

@@ -44,6 +44,7 @@ xisto build --pkgs ~/src/packages -o app src/main.ts   # or straight from a chec
 | `exceljs` | `exceljs` ^4 |
 | `express` | `@types/express` ^4 (the Express API) |
 | `helmet` | `helmet` ^7 |
+| `intl` | JavaScript's `Intl` (NumberFormat, DateTimeFormat, Collator; en-US and pt-BR), which xisto does not build in |
 | `ioredis` | `ioredis` ^5 |
 | `jose` | `jose` ^5 |
 | `jsonwebtoken` | `jsonwebtoken` ^9 |

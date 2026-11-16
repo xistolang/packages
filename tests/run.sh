@@ -46,6 +46,7 @@ TESTS="
 subpaths tests/subpaths/run.sh ^ok:
 reflectmeta tests/reflectmeta/run.sh
 validator tests/validator/run.sh
+intl tests/intl/run.sh
 nestlog tests/nestlog/run.sh
 nestjwt tests/nestjwt/run.sh
 jose tests/jose/run.sh
