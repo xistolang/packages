@@ -43,13 +43,13 @@ function currencyDigits(code: string): int {
   return k >= 0 && k % 4 === 0 ? Math.trunc(t.charCodeAt(k + 3)) - 48 : 2;
 }
 
-// the digits of a currency's code, upper case, or "" when it is not three ASCII letters (IsWellFormedCurrencyCode)
+// the currency's code upper-cased, or the RangeError of a code that is not three ASCII letters
+// (IsWellFormedCurrencyCode; a literal code is checked when the program is compiled: xisto folds the tests)
 function currencyCode(code: string): string {
-  if (code.length !== 3) return "";
-  const a = code.charCodeAt(0) | 32;
-  const b = code.charCodeAt(1) | 32;
-  const c = code.charCodeAt(2) | 32;
-  if (a < 97 || a > 122 || b < 97 || b > 122 || c < 97 || c > 122) return "";
+  const a = code.length === 3 ? code.charCodeAt(0) | 32 : 0;
+  const b = code.length === 3 ? code.charCodeAt(1) | 32 : 0;
+  const c = code.length === 3 ? code.charCodeAt(2) | 32 : 0;
+  if (a < 97 || a > 122 || b < 97 || b > 122 || c < 97 || c > 122) throw new RangeError("Invalid currency code : " + code);
   return String.fromCharCode(a - 32, b - 32, c - 32);
 }
 
@@ -102,7 +102,6 @@ export class Intl_NumberFormat {
       const given = o.currency ?? "";
       if (given === "") throw new TypeError("Currency code is required with currency style.");
       const code = currencyCode(given);
-      if (code === "") throw new RangeError("Invalid currency code : " + given);
       this.currency = code;
       fracDefault = currencyDigits(code);
       maxDefault = fracDefault;
