@@ -26,12 +26,15 @@ for t in none number datetime; do
   $X build --no-warnings -o "$OUT/size-$t" size/$t.ts > "$OUT/size-$t.build" 2>&1 || { echo "FAIL intl size/$t: build"; head "$OUT/size-$t.build"; fail=1; }
 done
 NUM=';BRL=R$'                     # data/number.ts: the currency symbols
-DT='Horário Padrão de Brasília'     # data/datetime.ts: the zone names
+DT='janeiro|fevereiro'             # data/datetime.ts: pt-BR's month names
+EN='January|February'              # ... en-US's
+ZN='Horário Padrão de Brasília'     # ... the zone names
 COLL='#$###*###1##'                 # data/collation.ts: the weights (the table's start)
 bytes() { wc -c < "$1" | tr -d ' '; }
 sizes="none $(bytes "$OUT/size-none"), number $(bytes "$OUT/size-number"), datetime $(bytes "$OUT/size-datetime") bytes"
 if has "$OUT/size-none" "$NUM" || has "$OUT/size-none" "$DT" || has "$OUT/size-none" "$COLL"; then echo "FAIL intl size: a program without Intl has the package's data"; fail=1
 elif ! has "$OUT/size-number" "$NUM" || has "$OUT/size-number" "$DT" || has "$OUT/size-number" "$COLL"; then echo "FAIL intl size: NumberFormat alone has other data"; fail=1
 elif has "$OUT/size-datetime" "$NUM" || ! has "$OUT/size-datetime" "$DT" || has "$OUT/size-datetime" "$COLL"; then echo "FAIL intl size: DateTimeFormat alone has other data"; fail=1
-else echo "ok intl size: each formatter's data only where it is used ($sizes)"; fi
+elif has "$OUT/size-datetime" "$EN" || has "$OUT/size-datetime" "$ZN"; then echo "FAIL intl size: a pt-BR dateStyle program has en-US data or zone names"; fail=1
+else echo "ok intl size: each formatter's data only where it is used, one locale's, no zone names unless printed ($sizes)"; fi
 exit $fail

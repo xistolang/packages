@@ -224,26 +224,28 @@ function datetimeData() {
     src += `    ${nmlist("Elong")},\n    ${nmlist("Eshort")},\n    ${nmlist("Enarrow")},\n`;
     src += `    ${same("Elong", "clong") && same("Eshort", "cshort") && same("Enarrow", "cnarrow") ? '""' : q([nm.clong, nm.cshort, nm.cnarrow].map((x) => x.join("|")).join("#"))},\n`;
     src += `    ${q(nm.am)}, ${q(nm.pm)}, ${defH12});\n}\n`;
-    // every pattern once, in one string; an ASCII index gives each shape its pattern's number (2 base-90 digits):
-    // date shapes, time shapes, the glue of each date shape, the zone glue of each (date shape, zone kind), styles
-    const pats = [""], pid = new Map([["", 0]]);
-    const idOf = (v) => { if (v === undefined) v = ""; if (!pid.has(v)) { pid.set(v, pats.length); pats.push(v); } return pid.get(v); };
-    let index = "";
-    const put = (v) => { index += enc2(idOf(v)); };
-    for (let k = 0; k < DATE_KEYS; k++) put(date[k]);
-    for (let k = 0; k < TIME_KEYS; k++) put(time[k]);
-    for (let k = 0; k < DATE_KEYS; k++) put(glue[k]);
-    for (let k = 0; k < DATE_KEYS * 5; k++) put(zglue[k]);
-    for (let k = 0; k < 16; k++) put(styles[k]);
-    // the (date shape, time shape) pairs whose glue is another: 3 base-90 digits of the pair, 2 of the pattern
-    let except = "";
-    glueX.forEach((v, k) => { if (v !== undefined) except += enc1(Math.floor(k / 8100)) + enc1(Math.floor(k / 90) % 90) + enc1(k % 90) + enc2(idOf(v)); });
-    let list = "", offs = "";
-    for (const p of pats) { offs += enc3(list.length); list += p; }
-    offs += enc3(list.length);
-    if ([...list].some((c) => c.codePointAt(0) > 0xffff)) throw new Error("a pattern outside the BMP");
-    src += `export function dtPatterns_${id(l)}(): string {\n  return ${q(list)};\n}\n`;
-    src += `export function dtIndex_${id(l)}(): string {\n  return ${q(offs + "!" + index + "!" + except)};\n}\n`;
+    // four tables (date shapes, time shapes, the glue of each date shape with the pairs that take another, the zone
+    // glue of each (date shape, zone kind)), each one string "offsets!slots!pairs!patterns": every pattern of the table
+    // once, its offset (3 base-90 digits), and each slot's pattern number (2 digits). A program whose literal options
+    // need no date (or no glue, no zone name) does not reach that table.
+    const table = (slots, pairs) => {
+      const pats = [""], pid = new Map([["", 0]]);
+      const idOf = (v) => { if (v === undefined) v = ""; if (!pid.has(v)) { pid.set(v, pats.length); pats.push(v); } return pid.get(v); };
+      let index = "";
+      for (const v of slots) index += enc2(idOf(v));
+      let except = "";
+      if (pairs) pairs.forEach((v, k) => { if (v !== undefined) except += enc1(Math.floor(k / 8100)) + enc1(Math.floor(k / 90) % 90) + enc1(k % 90) + enc2(idOf(v)); });
+      let list = "", offs = "";
+      for (const p of pats) { offs += enc3(list.length); list += p; }
+      offs += enc3(list.length);
+      if ([...list].some((c) => c.codePointAt(0) > 0xffff)) throw new Error("a pattern outside the BMP");
+      return offs + "!" + index + "!" + except + "!" + list;
+    };
+    const range = (n, f) => Array.from({ length: n }, (_, k) => f(k));
+    src += `export function dtDates_${id(l)}(): string {\n  return ${q(table(range(DATE_KEYS, (k) => date[k])))};\n}\n`;
+    src += `export function dtTimes_${id(l)}(): string {\n  return ${q(table(range(TIME_KEYS, (k) => time[k])))};\n}\n`;
+    src += `export function dtGlues_${id(l)}(): string {\n  return ${q(table(range(DATE_KEYS, (k) => glue[k]), glueX))};\n}\n`;
+    src += `export function dtZoneGlues_${id(l)}(): string {\n  return ${q(table(range(DATE_KEYS * 5, (k) => zglue[k])))};\n}\n`;
     // the 16 style patterns again, on their own: a program that passes dateStyle / timeStyle as literals compiles
     // only the one it uses (xisto folds the if over a literal slot), not this locale's whole pattern table
     src += `export function dtStyle_${id(l)}(slot: int): string {\n`;
@@ -251,8 +253,11 @@ function datetimeData() {
     src += `  return "";\n}\n`;
     src += zoneNames(l);
   }
-  src += `// dtIndex: the patterns' offsets in dtPatterns (3 digits each), "!", the pattern of each date shape (${DATE_KEYS}), time\n// shape (${TIME_KEYS}), date shape's glue (${DATE_KEYS}), (date shape, zone kind)'s zone glue (${DATE_KEYS * 5}) and style (16), 2 digits\n// each, "!", the (date, time) pairs with another glue: 3 digits of date * ${TIME_KEYS} + time, 2 of the pattern\n`;
-  src += dispatch("dtLocale", "DtLocale", "") + dispatch("dtPatterns", "string", "") + dispatch("dtIndex", "string", "") + dispatch("dtZoneNames", "string", "") +
+  src += `// dtDates / dtTimes / dtGlues / dtZoneGlues: "offsets!slots!pairs!patterns" (src/datetime.ts, tablePattern); the date
+// shapes (${DATE_KEYS}), the time shapes (${TIME_KEYS}), each date shape's glue (pairs: 3 digits of date * ${TIME_KEYS} + time, 2 of
+// the pattern), the zone glue of each (date shape, zone kind) (${DATE_KEYS * 5})\n`;
+  src += dispatch("dtLocale", "DtLocale", "") + dispatch("dtDates", "string", "") + dispatch("dtTimes", "string", "") + dispatch("dtGlues", "string", "") +
+    dispatch("dtZoneGlues", "string", "") + dispatch("dtZoneNames", "string", "") +
     `export function dtStyle(i: int, slot: int): string {\n  switch (i) {\n${LOCALES.map((l, i) => i ? `    case ${i}: return dtStyle_${id(l)}(slot);\n` : "").join("")}    default: return dtStyle_${id(LOCALES[0])}(slot);\n  }\n}\n`;
   fs.writeFileSync(path.join(out, "datetime.ts"), src);
 }

@@ -2,7 +2,9 @@
 // fields, as Node (ICU) prints them for the locales in data/datetime.ts; a timeZone of the system's TZ database.
 import { DtLocale } from "./types";
 import { localeIndex, localeTag } from "../data/locales";
-import { dtLocale, dtPatterns, dtIndex, dtZoneNames, dtStyle, dtLocale_pt_BR, dtLocale_en_US, dtPatterns_pt_BR, dtPatterns_en_US, dtIndex_pt_BR, dtIndex_en_US, dtStyle_pt_BR, dtStyle_en_US } from "../data/datetime";
+import { dtLocale, dtDates, dtTimes, dtGlues, dtZoneGlues, dtZoneNames, dtStyle, dtLocale_pt_BR, dtLocale_en_US, dtStyle_pt_BR,
+  dtStyle_en_US, dtDates_pt_BR, dtDates_en_US, dtTimes_pt_BR, dtTimes_en_US, dtGlues_pt_BR, dtGlues_en_US, dtZoneGlues_pt_BR,
+  dtZoneGlues_en_US, dtZoneNames_pt_BR, dtZoneNames_en_US } from "../data/datetime";
 import { base90, lookup } from "./table";
 import { __xs_tz_fields, __xs_tz_local } from "xisto:tz";
 
@@ -127,6 +129,27 @@ function tokenKind(f: string): int {
   }
 }
 
+// the pattern of slot in a table of data/datetime.ts ("offsets!slots!pairs!patterns")
+function tablePattern(t: string, slot: int): string {
+  const a = t.indexOf("!");
+  const c = t.indexOf("!", t.indexOf("!", a + 1) + 1) + 1;
+  const id = base90(t, a + 1 + slot * 2, 2);
+  return t.substring(c + base90(t, id * 3, 3), c + base90(t, id * 3 + 3, 3));
+}
+// a date shape's glue in the glue table, or the pattern its pair (key) is listed with
+function gluePattern(t: string, dk: int, key: int): string {
+  const a = t.indexOf("!");
+  const b = t.indexOf("!", a + 1);
+  const c = t.indexOf("!", b + 1);
+  for (let p = b + 1; p + 5 <= c; p += 5) {
+    if (base90(t, p, 3) === key) {
+      const id = base90(t, p + 3, 2);
+      return t.substring(c + 1 + base90(t, id * 3, 3), c + 1 + base90(t, id * 3 + 3, 3));
+    }
+  }
+  return tablePattern(t, dk);
+}
+
 /** new Intl.DateTimeFormat(locale, options).format(date) */
 export class Intl_DateTimeFormat {
   li: int;
@@ -134,6 +157,7 @@ export class Intl_DateTimeFormat {
   locale: string;
   zone: string; // "" for the local time
   zoneName: string; // "", "short", "long", "shortOffset", "longOffset"
+  zoneNames: string = ""; // the locale's zone names (data/datetime.ts), when the pattern can print one
   cycle: string; // "h11", "h12", "h23", "h24"
   // the pattern, as tokens: kinds (0 literal text, else tokenKind), a literal's text, a numeric field's width
   kinds: int[] = [];
@@ -159,17 +183,17 @@ export class Intl_DateTimeFormat {
     const ow = o.weekday;
     const weekday = ow === undefined || ow === null ? "" : fieldOption("weekday", ow, textWidths());
     const oy = o.year;
-    let year = oy === undefined || oy === null ? "" : fieldOption("year", oy, numericWidths());
+    const year = oy === undefined || oy === null ? "" : fieldOption("year", oy, numericWidths());
     const om = o.month;
-    let month = om === undefined || om === null ? "" : fieldOption("month", om, monthWidths());
+    const month = om === undefined || om === null ? "" : fieldOption("month", om, monthWidths());
     const od = o.day;
-    let day = od === undefined || od === null ? "" : fieldOption("day", od, numericWidths());
+    const day = od === undefined || od === null ? "" : fieldOption("day", od, numericWidths());
     const oh = o.hour;
-    let hour = oh === undefined || oh === null ? "" : oh === "2-digit" || oh === "numeric" ? oh : fieldOption("hour", oh, numericWidths());
+    const hour = oh === undefined || oh === null ? "" : oh === "2-digit" || oh === "numeric" ? oh : fieldOption("hour", oh, numericWidths());
     const omi = o.minute;
-    let minute = omi === undefined || omi === null ? "" : omi === "2-digit" || omi === "numeric" ? omi : fieldOption("minute", omi, numericWidths());
+    const minute = omi === undefined || omi === null ? "" : omi === "2-digit" || omi === "numeric" ? omi : fieldOption("minute", omi, numericWidths());
     const os = o.second;
-    let second = os === undefined || os === null ? "" : os === "2-digit" || os === "numeric" ? os : fieldOption("second", os, numericWidths());
+    const second = os === undefined || os === null ? "" : os === "2-digit" || os === "numeric" ? os : fieldOption("second", os, numericWidths());
     const ozn = o.timeZoneName;
     const zoneName = ozn === undefined || ozn === null ? "" : fieldOption("timeZoneName", ozn, zoneNameStyles());
     this.zoneName = zoneName;
@@ -201,60 +225,40 @@ export class Intl_DateTimeFormat {
       const gp = li === 1 ? dtStyle_pt_BR(gslot) : li === 0 ? dtStyle_en_US(gslot) : dtStyle(li, gslot);
       pattern = dp + gp + tp;
     } else {
-      // the locale's patterns (data/datetime.ts): one string, and an index of where each shape's pattern is
-      const pats = li === 1 ? dtPatterns_pt_BR() : li === 0 ? dtPatterns_en_US() : dtPatterns(li);
-      const index = li === 1 ? dtIndex_pt_BR() : li === 0 ? dtIndex_en_US() : dtIndex(li);
-      const shapes = index.indexOf("!") + 1;
-      const pat = (slot: int): string => {
-        const id = base90(index, shapes + slot * 2, 2);
-        return pats.substring(base90(index, id * 3, 3), base90(index, id * 3 + 3, 3));
-      };
-      let needDate = kind === "date" || kind === "all" || kind === "any";
-      let needTime = kind === "time" || kind === "all";
-      if (kind === "date") needDate = !hasDate;
-      else if (kind === "time") needTime = !hasTime;
-      else if (hasDate || hasTime) {
-        needDate = false;
-        needTime = false;
-      }
-      if (needDate) {
-        year = "numeric";
-        month = "numeric";
-        day = "numeric";
-      }
-      if (needTime) {
-        hour = "numeric";
-        minute = "numeric";
-        second = "numeric";
-      }
-      // the shape keys of tools/gen.mjs: ((y * 6 + M) * 3 + d) * 4 + w and (((h * 3 + m) * 3 + s) * 2 + h23) * 5 + z
-      const yi = numericWidths().indexOf(year) + 1;
-      const mi = month === "" ? 0 : month === "numeric" ? 1 : month === "2-digit" ? 2 : month === "short" ? 3 : month === "long" ? 4 : 5;
-      const di = numericWidths().indexOf(day) + 1;
-      const wi = weekday === "" ? 0 : weekday === "short" ? 1 : weekday === "long" ? 2 : 3;
-      const dk = ((yi * 6 + mi) * 3 + di) * 4 + wi;
-      const hi = numericWidths().indexOf(hour) + 1;
-      const ni = numericWidths().indexOf(minute) + 1;
-      const si = numericWidths().indexOf(second) + 1;
-      const zi = zoneNameStyles().indexOf(this.zoneName) + 1;
-      const tk = hi + ni + si === 0 ? 0 : (((hi * 3 + ni) * 3 + si) * 3 + cyc) * 5 + zi;
-      const dp = dk > 0 ? pat(dk) : "";
+      // (const, compared with literals: options given as literals decide the shape, and which tables it reads)
+      const noFields = !hasDate && !hasTime;
+      const needDate = kind === "date" ? !hasDate : kind === "time" ? false : (kind === "all" || kind === "any") && noFields;
+      const needTime = kind === "time" ? !hasTime : kind === "all" && noFields;
+      const y = needDate ? "numeric" : year;
+      const mo = needDate ? "numeric" : month;
+      const d = needDate ? "numeric" : day;
+      const h = needTime ? "numeric" : hour;
+      const mn = needTime ? "numeric" : minute;
+      const sc = needTime ? "numeric" : second;
+      // the shape keys of tools/gen.mjs: ((y * 6 + M) * 3 + d) * 4 + w and (((h * 3 + m) * 3 + s) * 3 + cycle) * 5 + z
+      const yi: int = y === "" ? 0 : y === "numeric" ? 1 : 2;
+      const mi: int = mo === "" ? 0 : mo === "numeric" ? 1 : mo === "2-digit" ? 2 : mo === "short" ? 3 : mo === "long" ? 4 : 5;
+      const di: int = d === "" ? 0 : d === "numeric" ? 1 : 2;
+      const wi: int = weekday === "" ? 0 : weekday === "short" ? 1 : weekday === "long" ? 2 : 3;
+      const dk: int = ((yi * 6 + mi) * 3 + di) * 4 + wi;
+      const hi: int = h === "" ? 0 : h === "numeric" ? 1 : 2;
+      const ni: int = mn === "" ? 0 : mn === "numeric" ? 1 : 2;
+      const si: int = sc === "" ? 0 : sc === "numeric" ? 1 : 2;
+      const zi: int = zoneName === "" ? 0 : zoneName === "short" ? 1 : zoneName === "long" ? 2 : zoneName === "shortOffset" ? 3 : 4;
+      const tk: int = hi + ni + si === 0 ? 0 : (((hi * 3 + ni) * 3 + si) * 3 + cyc) * 5 + zi;
+      const dp = dk > 0 ? tablePattern(li === 1 ? dtDates_pt_BR() : li === 0 ? dtDates_en_US() : dtDates(li), dk) : "";
       if (dk > 0 && tk > 0) {
         // the glue of the date shape, unless the pair is listed with another one
-        let g = pat(216 + 405 + dk);
-        const key = dk * 405 + tk;
-        for (let p = index.indexOf("!", shapes) + 1; p + 5 <= index.length; p += 5) {
-          if (base90(index, p, 3) === key) {
-            const id = base90(index, p + 3, 2);
-            g = pats.substring(base90(index, id * 3, 3), base90(index, id * 3 + 3, 3));
-            break;
-          }
-        }
+        const g = gluePattern(li === 1 ? dtGlues_pt_BR() : li === 0 ? dtGlues_en_US() : dtGlues(li), dk, dk * 405 + tk);
+        const tp = tablePattern(li === 1 ? dtTimes_pt_BR() : li === 0 ? dtTimes_en_US() : dtTimes(li), tk);
         if (g.startsWith("=")) pattern = g.substring(1); // (a pattern that is not date + glue + time)
-        else pattern = dp + g + pat(216 + tk);
-      } else if (tk > 0) pattern = pat(216 + tk);
-      else pattern = zi > 0 ? dp + pat(216 + 405 + 216 + dk * 5 + zi) + "{z}" : dp;
+        else pattern = dp + g + tp;
+      } else if (tk > 0) pattern = tablePattern(li === 1 ? dtTimes_pt_BR() : li === 0 ? dtTimes_en_US() : dtTimes(li), tk);
+      else pattern = zi > 0 ? dp + tablePattern(li === 1 ? dtZoneGlues_pt_BR() : li === 0 ? dtZoneGlues_en_US() : dtZoneGlues(li), dk * 5 + zi) + "{z}" : dp;
     }
+    // the zone names, when the pattern can print one (timeZoneName, timeStyle full or long): the locale's own
+    const zoneNames = zoneName !== "" || ts === 0 || ts === 1 ? (li === 1 ? dtZoneNames_pt_BR() : li === 0 ? dtZoneNames_en_US() : dtZoneNames(li)) : "";
+    this.zoneNames = zoneNames;
     this.compile(pattern);
   }
 
@@ -410,7 +414,7 @@ export class Intl_DateTimeFormat {
     const zone = this.zone !== "" ? this.zone : canonicalZone(localZone());
     if (zone !== "" && (style === "short" || style === "long")) {
       const std = Math.min(this.offsetAt(Date.UTC(yy, 0, 1)), this.offsetAt(Date.UTC(yy, 6, 1)));
-      const names = lookup(dtZoneNames(this.li), zone);
+      const names = lookup(this.zoneNames, zone);
       if (names !== null) {
         const n = names.split(",")[(off > std ? 2 : 0) + (style === "long" ? 1 : 0)];
         if (n !== "") return n;
