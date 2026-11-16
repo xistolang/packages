@@ -2,7 +2,7 @@
 // fields, as Node (ICU) prints them for the locales in data/datetime.ts; a timeZone of the system's TZ database.
 import { DtLocale } from "./types";
 import { localeIndex, localeTag } from "../data/locales";
-import { dtLocale, dtPatterns, dtIndex, dtZoneNames } from "../data/datetime";
+import { dtLocale, dtPatterns, dtIndex, dtZoneNames, dtStyle, dtLocale_pt_BR, dtLocale_en_US, dtPatterns_pt_BR, dtPatterns_en_US, dtIndex_pt_BR, dtIndex_en_US, dtStyle_pt_BR, dtStyle_en_US } from "../data/datetime";
 import { base90, lookup } from "./table";
 import { __xs_tz_fields } from "xisto:tz";
 
@@ -140,52 +140,72 @@ export class Intl_DateTimeFormat {
 
   /** kind: what the options must hold and what they default to: "any" (DateTimeFormat), "all" (toLocaleString),
       "date" (toLocaleDateString), "time" (toLocaleTimeString) */
+  // (written so that literal arguments, new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }), are decided when the
+  // program is compiled: xisto reads the options of a constructor called once as the literals they are and compiles
+  // only the branches they take: each option compared with literals, the locale's data chosen by ?:)
   constructor(locales: string | null = null, options: Intl_DateTimeFormatOptions | null = null, kind: string = "any") {
-    this.li = localeIndex(locales);
-    this.locale = localeTag(this.li);
-    this.data = dtLocale(this.li);
+    const li: int = locales === "pt-BR" ? 1 : locales === "en-US" ? 0 : localeIndex(locales);
+    this.li = li;
+    this.locale = li === 1 ? "pt-BR" : li === 0 ? "en-US" : localeTag(li);
+    this.data = li === 1 ? dtLocale_pt_BR() : li === 0 ? dtLocale_en_US() : dtLocale(li);
     const o: Intl_DateTimeFormatOptions = options ?? {};
     if (o.era != null || o.fractionalSecondDigits != null || o.dayPeriod != null)
       throw new Error("xisto intl: Intl.DateTimeFormat supports dateStyle, timeStyle, weekday, year, month, day, hour, minute, second, timeZoneName, timeZone, hour12 and hourCycle");
     const z = o.timeZone ?? "";
     this.zone = z === "" ? "" : canonicalZone(z);
     if (this.zone !== "" && this.zone !== "UTC") __xs_tz_fields(0, this.zone); // (an unknown zone is a RangeError here, as in Node)
-    const weekday = fieldOption("weekday", o.weekday, textWidths());
-    let year = fieldOption("year", o.year, numericWidths());
-    let month = fieldOption("month", o.month, monthWidths());
-    let day = fieldOption("day", o.day, numericWidths());
-    let hour = fieldOption("hour", o.hour, numericWidths());
-    let minute = fieldOption("minute", o.minute, numericWidths());
-    let second = fieldOption("second", o.second, numericWidths());
-    this.zoneName = fieldOption("timeZoneName", o.timeZoneName, zoneNameStyles());
-    const hc = fieldOption("hourCycle", o.hourCycle, hourCycles());
+    const ow = o.weekday;
+    const weekday = ow === undefined || ow === null ? "" : fieldOption("weekday", ow, textWidths());
+    const oy = o.year;
+    let year = oy === undefined || oy === null ? "" : fieldOption("year", oy, numericWidths());
+    const om = o.month;
+    let month = om === undefined || om === null ? "" : fieldOption("month", om, monthWidths());
+    const od = o.day;
+    let day = od === undefined || od === null ? "" : fieldOption("day", od, numericWidths());
+    const oh = o.hour;
+    let hour = oh === undefined || oh === null ? "" : oh === "2-digit" || oh === "numeric" ? oh : fieldOption("hour", oh, numericWidths());
+    const omi = o.minute;
+    let minute = omi === undefined || omi === null ? "" : omi === "2-digit" || omi === "numeric" ? omi : fieldOption("minute", omi, numericWidths());
+    const os = o.second;
+    let second = os === undefined || os === null ? "" : os === "2-digit" || os === "numeric" ? os : fieldOption("second", os, numericWidths());
+    const ozn = o.timeZoneName;
+    const zoneName = ozn === undefined || ozn === null ? "" : fieldOption("timeZoneName", ozn, zoneNameStyles());
+    this.zoneName = zoneName;
+    const ohc = o.hourCycle;
+    const hc = ohc === undefined || ohc === null ? "" : fieldOption("hourCycle", ohc, hourCycles());
     const h12 = o.hour12;
-    if (h12 !== undefined && h12 !== null) this.cycle = h12 ? "h12" : "h23";
-    else if (hc !== "") this.cycle = hc;
-    else this.cycle = this.data.hour12 ? "h12" : "h23";
-    const mode = this.cycle === "h11" || this.cycle === "h12" ? 0 : 1;
-    const ds = styleIndex("dateStyle", o.dateStyle);
-    const ts = styleIndex("timeStyle", o.timeStyle);
+    const localeH12 = li === 1 ? false : li === 0 ? true : this.data.hour12;
+    const cycle = h12 !== undefined && h12 !== null ? (h12 ? "h12" : "h23") : hc !== "" ? hc : localeH12 ? "h12" : "h23";
+    this.cycle = cycle;
+    const mode: int = cycle === "h11" || cycle === "h12" ? 0 : 1;
+    const ods = o.dateStyle;
+    const ds: int = ods === undefined || ods === null ? -1 : ods === "full" ? 0 : ods === "long" ? 1 : ods === "medium" ? 2 : ods === "short" ? 3 : styleIndex("dateStyle", ods);
+    const ots = o.timeStyle;
+    const ts: int = ots === undefined || ots === null ? -1 : ots === "full" ? 0 : ots === "long" ? 1 : ots === "medium" ? 2 : ots === "short" ? 3 : styleIndex("timeStyle", ots);
     const hasDate = weekday !== "" || year !== "" || month !== "" || day !== "";
     const hasTime = hour !== "" || minute !== "" || second !== "";
-    // the locale's patterns (data/datetime.ts): one string, and an index of where each shape's pattern is
-    const pats = dtPatterns(this.li);
-    const index = dtIndex(this.li);
-    const shapes = index.indexOf("!") + 1;
-    const pat = (slot: int): string => {
-      const id = base90(index, shapes + slot * 2, 2);
-      return pats.substring(base90(index, id * 3, 3), base90(index, id * 3 + 3, 3));
-    };
     let pattern = "";
     if (ds >= 0 || ts >= 0) {
-      if (hasDate || hasTime || this.zoneName !== "") throw new Error("Can't set option " + (hasDate ? "date fields" : hasTime ? "time fields" : "timeZoneName") + " when " + (ds >= 0 ? "dateStyle" : "timeStyle") + " is used");
+      if (hasDate || hasTime || zoneName !== "") throw new Error("Can't set option " + (hasDate ? "date fields" : hasTime ? "time fields" : "timeZoneName") + " when " + (ds >= 0 ? "dateStyle" : "timeStyle") + " is used");
       if (kind === "date" && ds < 0) throw new Error("Invalid option : timeStyle");
       if (kind === "time" && ts < 0) throw new Error("Invalid option : dateStyle");
-      const styles: int = 216 + 270 + 216 + 1080;
-      const dp = ds >= 0 ? pat(styles + ds) : "";
-      const tp = ts >= 0 ? pat(styles + 4 + mode * 4 + ts) : "";
-      pattern = ds >= 0 && ts >= 0 ? dp + pat(styles + 12 + ds) + tp : dp + tp;
+      // the style patterns (data/datetime.ts, dtStyle): 0-3 dateStyle, 4-7 timeStyle h12, 8-11 h23, 12-15 their glue
+      const dslot: int = ds >= 0 ? ds : -1;
+      const tslot: int = ts >= 0 ? 4 + mode * 4 + ts : -1;
+      const gslot: int = ds >= 0 && ts >= 0 ? 12 + ds : -1;
+      const dp = li === 1 ? dtStyle_pt_BR(dslot) : li === 0 ? dtStyle_en_US(dslot) : dtStyle(li, dslot);
+      const tp = li === 1 ? dtStyle_pt_BR(tslot) : li === 0 ? dtStyle_en_US(tslot) : dtStyle(li, tslot);
+      const gp = li === 1 ? dtStyle_pt_BR(gslot) : li === 0 ? dtStyle_en_US(gslot) : dtStyle(li, gslot);
+      pattern = dp + gp + tp;
     } else {
+      // the locale's patterns (data/datetime.ts): one string, and an index of where each shape's pattern is
+      const pats = li === 1 ? dtPatterns_pt_BR() : li === 0 ? dtPatterns_en_US() : dtPatterns(li);
+      const index = li === 1 ? dtIndex_pt_BR() : li === 0 ? dtIndex_en_US() : dtIndex(li);
+      const shapes = index.indexOf("!") + 1;
+      const pat = (slot: int): string => {
+        const id = base90(index, shapes + slot * 2, 2);
+        return pats.substring(base90(index, id * 3, 3), base90(index, id * 3 + 3, 3));
+      };
       let needDate = kind === "date" || kind === "all" || kind === "any";
       let needTime = kind === "time" || kind === "all";
       if (kind === "date") needDate = !hasDate;

@@ -243,10 +243,16 @@ function datetimeData() {
     if ([...list].some((c) => c.codePointAt(0) > 0xffff)) throw new Error("a pattern outside the BMP");
     src += `export function dtPatterns_${id(l)}(): string {\n  return ${q(list)};\n}\n`;
     src += `export function dtIndex_${id(l)}(): string {\n  return ${q(offs + "!" + index + "!" + except)};\n}\n`;
+    // the 16 style patterns again, on their own: a program that passes dateStyle / timeStyle as literals compiles
+    // only the one it uses (xisto folds the if over a literal slot), not this locale's whole pattern table
+    src += `export function dtStyle_${id(l)}(slot: int): string {\n`;
+    for (let k = 0; k < 16; k++) src += `  if (slot === ${k}) return ${q(styles[k])};\n`;
+    src += `  return "";\n}\n`;
     src += zoneNames(l);
   }
   src += `// dtIndex: the patterns' offsets in dtPatterns (3 digits each), "!", the pattern of each date shape (${DATE_KEYS}), time\n// shape (${TIME_KEYS}), date shape's glue (${DATE_KEYS}), (date shape, zone kind)'s zone glue (${DATE_KEYS * 5}) and style (16), 2 digits\n// each, "!", the (date, time) pairs with another glue: 3 digits of date * ${TIME_KEYS} + time, 2 of the pattern\n`;
-  src += dispatch("dtLocale", "DtLocale", "") + dispatch("dtPatterns", "string", "") + dispatch("dtIndex", "string", "") + dispatch("dtZoneNames", "string", "");
+  src += dispatch("dtLocale", "DtLocale", "") + dispatch("dtPatterns", "string", "") + dispatch("dtIndex", "string", "") + dispatch("dtZoneNames", "string", "") +
+    `export function dtStyle(i: int, slot: int): string {\n  switch (i) {\n${LOCALES.map((l, i) => i ? `    case ${i}: return dtStyle_${id(l)}(slot);\n` : "").join("")}    default: return dtStyle_${id(LOCALES[0])}(slot);\n  }\n}\n`;
   fs.writeFileSync(path.join(out, "datetime.ts"), src);
 }
 // the zones whose names are kept (others print as GMT-3 / GMT-03:00, as ICU does for a zone it has no name for)
