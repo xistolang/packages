@@ -23,7 +23,6 @@
 //
 // Differences from Node (tools/verify.mjs checks the package's code against Node's Intl over ~1 million cases):
 //   - errors are Error with Node's message, not RangeError / TypeError (those classes cost a program ~57 KB in xisto)
-//   - hourCycle h11 / h24: the hour is counted as asked, but laid out as h12 / h23 (ICU picks other patterns)
 //   - a zone without a kept name prints its long name as GMT-03:00 (Node: e.g. "Nepal Time")
 //   - Collator: ½ ¼ ¾ and ligatures (ﬁ) sort as single symbols (ICU expands them); scripts other than Latin
 //     sort after it by code point (ICU orders Greek, Cyrillic, Han... among themselves by their own rules);

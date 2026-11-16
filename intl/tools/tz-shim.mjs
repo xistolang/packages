@@ -6,3 +6,7 @@ export function __xs_tz_fields(ms, zone) {
   const g = (t) => p.find((x) => x.type === t).value;
   return [+g("year"), +g("month"), +g("day"), +g("hour"), +g("minute"), +g("second"), ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(g("weekday"))];
 }
+// the system's zone when $TZ is not set (xisto reads /etc/localtime)
+export function __xs_tz_local() {
+  return new Intl.DateTimeFormat().resolvedOptions().timeZone ?? "";
+}

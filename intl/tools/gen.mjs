@@ -155,16 +155,17 @@ function dateKeyOpts(k) {
   return o;
 }
 // a time shape: hour, minute, second (none, numeric, 2-digit), 12 or 24 hours, a zone name (none, a name: short or
-// long, an offset: shortOffset or longOffset): (((h * 3 + m) * 3 + s) * 2 + h23) * 5 + z, 270 shapes
-const DATE_KEYS = 216, TIME_KEYS = 270;
+// long, an offset: shortOffset or longOffset), the hour cycle (h12, h23, h24: ICU lays h24 out its own way):
+// (((h * 3 + m) * 3 + s) * 3 + cycle) * 5 + z, 405 shapes
+const DATE_KEYS = 216, TIME_KEYS = 405;
 const ZN = [null, "short", "long", "shortOffset", "longOffset"];
 function timeKeyOpts(k) {
-  const z = k % 5, h23 = Math.floor(k / 5) % 2, s = Math.floor(k / 10) % 3, m = Math.floor(k / 30) % 3, h = Math.floor(k / 90);
+  const z = k % 5, cyc = Math.floor(k / 5) % 3, s = Math.floor(k / 15) % 3, m = Math.floor(k / 45) % 3, h = Math.floor(k / 135);
   const o = {};
   if (h) o.hour = NUMW[h];
   if (m) o.minute = NUMW[m];
   if (s) o.second = NUMW[s];
-  o.hourCycle = h23 ? "h23" : "h12";
+  o.hourCycle = ["h12", "h23", "h24"][cyc];
   if (z) o.timeZoneName = ZN[z];
   return o;
 }
@@ -174,11 +175,11 @@ function datetimeData() {
     const nm = names(l);
     const date = [], time = [], glue = [], zglue = [], glueX = [], byGlue = [];
     for (let k = 1; k < DATE_KEYS; k++) date[k] = tokens(l, nm, dateKeyOpts(k));
-    for (let k = 10; k < TIME_KEYS; k++) time[k] = tokens(l, nm, timeKeyOpts(k));
+    for (let k = 15; k < TIME_KEYS; k++) time[k] = tokens(l, nm, timeKeyOpts(k));
     // the glue between a date shape and a time shape (mostly one per date shape: the others are kept as exceptions)
     // and between a date shape and a lone zone name
     for (let dk = 1; dk < DATE_KEYS; dk++) {
-      for (let tk = 10; tk < TIME_KEYS; tk++) {
+      for (let tk = 15; tk < TIME_KEYS; tk++) {
         const full = tokens(l, nm, { ...dateKeyOpts(dk), ...timeKeyOpts(tk) });
         const D = date[dk], T = time[tk];
         let g = null;

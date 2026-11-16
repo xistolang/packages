@@ -4,7 +4,7 @@ import { DtLocale } from "./types";
 import { localeIndex, localeTag } from "../data/locales";
 import { dtLocale, dtPatterns, dtIndex, dtZoneNames, dtStyle, dtLocale_pt_BR, dtLocale_en_US, dtPatterns_pt_BR, dtPatterns_en_US, dtIndex_pt_BR, dtIndex_en_US, dtStyle_pt_BR, dtStyle_en_US } from "../data/datetime";
 import { base90, lookup } from "./table";
-import { __xs_tz_fields } from "xisto:tz";
+import { __xs_tz_fields, __xs_tz_local } from "xisto:tz";
 
 // (no module-level state: a top-level const would be compiled into every program, and runs after the program's own
 // statements when the compiler loads this package for Intl)
@@ -83,6 +83,8 @@ function pad2(n: int): string {
 function localZone(): string {
   const tz = process.env.TZ ?? "";
   if (tz !== "") return tz.startsWith(":") ? tz.substring(1) : tz;
+  const sys = __xs_tz_local(); // (/etc/localtime, as Node's ICU finds the zone)
+  if (sys !== "") return sys;
   const y = new Date().getFullYear();
   if (new Date(y, 0, 1).getTimezoneOffset() === 0 && new Date(y, 6, 1).getTimezoneOffset() === 0) return "UTC";
   return "";
@@ -177,7 +179,8 @@ export class Intl_DateTimeFormat {
     const localeH12 = li === 1 ? false : li === 0 ? true : this.data.hour12;
     const cycle = h12 !== undefined && h12 !== null ? (h12 ? "h12" : "h23") : hc !== "" ? hc : localeH12 ? "h12" : "h23";
     this.cycle = cycle;
-    const mode: int = cycle === "h11" || cycle === "h12" ? 0 : 1;
+    const mode: int = cycle === "h11" || cycle === "h12" ? 0 : 1; // (the styles: h12 or h23 patterns)
+    const cyc: int = cycle === "h24" ? 2 : mode; // (the fields: h24 has patterns of its own)
     const ods = o.dateStyle;
     const ds: int = ods === undefined || ods === null ? -1 : ods === "full" ? 0 : ods === "long" ? 1 : ods === "medium" ? 2 : ods === "short" ? 3 : styleIndex("dateStyle", ods);
     const ots = o.timeStyle;
@@ -234,12 +237,12 @@ export class Intl_DateTimeFormat {
       const ni = numericWidths().indexOf(minute) + 1;
       const si = numericWidths().indexOf(second) + 1;
       const zi = zoneNameStyles().indexOf(this.zoneName) + 1;
-      const tk = hi + ni + si === 0 ? 0 : (((hi * 3 + ni) * 3 + si) * 2 + mode) * 5 + zi;
+      const tk = hi + ni + si === 0 ? 0 : (((hi * 3 + ni) * 3 + si) * 3 + cyc) * 5 + zi;
       const dp = dk > 0 ? pat(dk) : "";
       if (dk > 0 && tk > 0) {
         // the glue of the date shape, unless the pair is listed with another one
-        let g = pat(216 + 270 + dk);
-        const key = dk * 270 + tk;
+        let g = pat(216 + 405 + dk);
+        const key = dk * 405 + tk;
         for (let p = index.indexOf("!", shapes) + 1; p + 5 <= index.length; p += 5) {
           if (base90(index, p, 3) === key) {
             const id = base90(index, p + 3, 2);
@@ -250,7 +253,7 @@ export class Intl_DateTimeFormat {
         if (g.startsWith("=")) pattern = g.substring(1); // (a pattern that is not date + glue + time)
         else pattern = dp + g + pat(216 + tk);
       } else if (tk > 0) pattern = pat(216 + tk);
-      else pattern = zi > 0 ? dp + pat(216 + 270 + 216 + dk * 5 + zi) + "{z}" : dp;
+      else pattern = zi > 0 ? dp + pat(216 + 405 + 216 + dk * 5 + zi) + "{z}" : dp;
     }
     this.compile(pattern);
   }
