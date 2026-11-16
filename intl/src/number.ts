@@ -70,6 +70,24 @@ function currencyAffixes(d: NumLocale, li: int, code: string, display: string): 
   return [pre, d.currencySuffix.replace("¤", sym), gap];
 }
 
+// 10^n (0 <= n <= 22: exact)
+function pow10(n: int): number {
+  let p = 1;
+  for (let i = 0; i < n; i++) p *= 10;
+  return p;
+}
+
+// the zeros that pad the integer v to width digits
+function zeros(width: int, v: number): string {
+  let z = "";
+  let t = 1;
+  for (let i = 1; i < width; i++) {
+    t *= 10;
+    if (v < t) z += "0";
+  }
+  return z;
+}
+
 /** new Intl.NumberFormat(locale, options).format(n) */
 export class Intl_NumberFormat {
   data: NumLocale;
@@ -138,6 +156,19 @@ export class Intl_NumberFormat {
     if (isNaN(value)) return this.prefix + d.nan + this.suffix;
     const sign = value < 0 || (value === 0 && 1 / value < 0) ? d.minus : "";
     if (!isFinite(value)) return sign + this.prefix + d.infinity + this.suffix;
+    const a = Math.abs(value);
+    const scale = pow10(this.maxFrac + this.shift);
+    // a value whose rounded digits are exact in a double, with a place to spare: rounded and laid out with arithmetic.
+    // ICU rounds the shortest decimal (half away from zero: 1.005 -> 1.01, not the double 1.00499...): the result is
+    // n - 1, n or n + 1 for n = round(a * 10^k); a midpoint (n +- 0.5) / 10^k, one correctly rounded division,
+    // compares with a as the shortest decimal compares with it, and is a only when that decimal is the midpoint
+    // itself (decimals that fine are each their own double below 2^52 / 10)
+    if (this.maxFrac + this.shift <= 15 && this.minInt === 1 && a * scale * 10 < 4503599627370496) {
+      let n = Math.round(a * scale);
+      if (a >= (n + 0.5) / scale) n += 1;
+      else if (a < (n - 0.5) / scale) n -= 1;
+      return sign + this.prefix + this.digitsGap + this.layout(n) + this.suffix;
+    }
     // the shortest decimal that reads back as the value (as ICU starts from): its digits, and where the point goes
     const s = String(Math.abs(value));
     let digits = "";
@@ -196,6 +227,30 @@ export class Intl_NumberFormat {
       int = g;
     }
     return sign + this.prefix + this.digitsGap + int + (frac.length > 0 ? d.decimal + frac : "") + this.suffix;
+  }
+
+  // n, the value times 10^(maxFrac + shift) rounded: its integer part grouped (minInt is 1 here), and its fraction
+  // without the trailing zeros past minFrac
+  layout(n: number): string {
+    const d = this.data;
+    const fp = pow10(this.maxFrac);
+    let int = Math.floor(n / fp);
+    let frac = n - int * fp;
+    let places = this.maxFrac;
+    while (places > this.minFrac && frac % 10 === 0) {
+      frac = frac / 10;
+      places--;
+    }
+    const fracText = places > 0 ? `${d.decimal}${zeros(places, frac)}${frac}` : "";
+    let out = "";
+    if (this.grouping && int >= pow10(2 + d.minGrouping)) {
+      while (int >= 1000) {
+        const g = int % 1000;
+        out = `${d.group}${zeros(3, g)}${g}${out}`;
+        int = Math.floor(int / 1000);
+      }
+    }
+    return `${int}${out}${fracText}`;
   }
 
   resolvedOptions(): Intl_ResolvedNumberFormatOptions {
