@@ -728,6 +728,19 @@ function serve(r: Route, req: HttpRequest, found: boolean): HttpResponse {
   return res;
 }
 
+// Express's req.params: each :name of the route's path with its (decoded) value from this request
+function fillParams(request: Request, path: string, req: HttpRequest): void {
+  if (!path.includes(":")) {
+    return;
+  }
+  for (const seg of path.split("/")) {
+    if (seg.startsWith(":")) {
+      const name = seg.endsWith("?") ? seg.slice(1, seg.length - 1) : seg.slice(1);
+      request.params[name] = req.param(name);
+    }
+  }
+}
+
 function handle(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpResponse {
   const request = new Request();
   request.setSource(req);
@@ -737,6 +750,7 @@ function handle(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpResp
   request.originalUrl = req.path + req.search();
   request.body = parsedBody(req.body);
   request.rawBody = Buffer.from(req.body);
+  fillParams(request, r.path, req);
   for (const h of ["authorization", "content-type", "accept", "user-agent", "accept-encoding", "x-request-id"]) {
     const v = req.header(h);
     if (v.length > 0) {
@@ -868,25 +882,32 @@ function runHandler(r: Route, req: HttpRequest, request: Request, response: Resp
         return early(run, badRequestText(r, response, je.message));
       }
       args[p.index] = value;
-    } else if (p.source === "query" && p.key.length === 0) {
-      // @Query() dto: the whole query as Express parses it (a repeated name gives a list), then as a body: the
-      // ValidationPipe's plainToInstance and validate for a class, the app's pipe for anything else
+    } else if ((p.source === "query" || p.source === "param") && p.key.length === 0) {
+      // @Query() dto / @Param() dto: the whole query as Express parses it (a repeated name gives a list), or the
+      // route's parameters, then as a body: the ValidationPipe's plainToInstance and validate for a class, the app's
+      // pipe for anything else
       const plain: Record<string, unknown> = {};
-      for (const name of req.queryNames()) {
-        if (name in plain) {
-          continue;
+      if (p.source === "param") {
+        for (const name of Object.keys(request.params)) {
+          plain[name] = request.params[name];
         }
-        const all = req.queryAll(name);
-        if (all.length === 1) {
-          plain[name] = all[0];
-        } else {
-          plain[name] = all;
+      } else {
+        for (const name of req.queryNames()) {
+          if (name in plain) {
+            continue;
+          }
+          const all = req.queryAll(name);
+          if (all.length === 1) {
+            plain[name] = all[0];
+          } else {
+            plain[name] = all;
+          }
         }
       }
       let text = JSON.stringify(plain);
       if (p.pipeClass !== null) {
         const parsed: any = JSON.parse(text);
-        const out = runPipe(p, parsed, "query");
+        const out = runPipe(p, parsed, p.source);
         args[p.index] = out;
         continue;
       }
@@ -957,7 +978,7 @@ function runHandler(r: Route, req: HttpRequest, request: Request, response: Resp
       // request.user is read by name)
       args[p.index] = type.kind === "interface" && v !== null ? type.decode(JSON.stringify(v as any)) : v;
     }
-    if (p.pipeClass !== null && !(p.source === "query" && p.key.length === 0)) {
+    if (p.pipeClass !== null && !((p.source === "query" || p.source === "param") && p.key.length === 0)) {
       args[p.index] = runPipe(p, args[p.index], p.source);
     }
   }

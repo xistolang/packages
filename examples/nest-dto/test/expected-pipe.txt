@@ -1,0 +1,36 @@
+GET /dto/list?term=abc -> 200 {"active": "absent", "next": 2, "order": "absent", "page": "absent", "size": "absent", "term": "string:abc"}
+GET /dto/list?term=abc&page=3&size=20&active=true&order=desc -> 200 {"active": "boolean:true", "next": 4, "order": "string:desc", "page": "number:3", "size": "number:20", "term": "string:abc"}
+GET /dto/list?term=abc&page=0 -> 400 {"error": "Bad Request", "message": ["page must not be less than 1"], "statusCode": 400}
+GET /dto/list?term=abc&page=x -> 400 {"error": "Bad Request", "message": ["page must not be less than 1", "page must be an integer number"], "statusCode": 400}
+GET /dto/list?term=abc&size=500 -> 400 {"error": "Bad Request", "message": ["size must not be greater than 100"], "statusCode": 400}
+GET /dto/list?term=abc&active=false -> 200 {"active": "boolean:true", "next": 2, "order": "absent", "page": "absent", "size": "absent", "term": "string:abc"}
+GET /dto/list?term=abc&order=up -> 400 {"error": "Bad Request", "message": ["order must be one of the following values: asc, desc"], "statusCode": 400}
+GET /dto/list -> 400 {"error": "Bad Request", "message": ["term should not be empty", "term must be a string"], "statusCode": 400}
+GET /dto/list?term= -> 400 {"error": "Bad Request", "message": ["term should not be empty"], "statusCode": 400}
+GET /dto/list?term=a&term=b -> 400 {"error": "Bad Request", "message": ["term must be a string"], "statusCode": 400}
+GET /dto/list?term=caf%C3%A9&page=2 -> 200 {"active": "absent", "next": 3, "order": "absent", "page": "number:2", "size": "absent", "term": "string:café"}
+GET /dto/list?term=abc&page=2.5 -> 400 {"error": "Bad Request", "message": ["page must be an integer number"], "statusCode": 400}
+GET /dto/list?term=abc&page= -> 400 {"error": "Bad Request", "message": ["page must not be less than 1"], "statusCode": 400}
+GET /dto/range?from=1&to=9 -> 200 {"from": "number:1", "to": "number:9"}
+GET /dto/range?from=a&to=2 -> 400 {"error": "Bad Request", "message": ["from must be an integer number"], "statusCode": 400}
+GET /dto/range?from=1 -> 400 {"error": "Bad Request", "message": ["to must be an integer number"], "statusCode": 400}
+GET /dto/items/7/blue-shoe -> 200 {"id": "number:7", "slug": "string:blue-shoe"}
+GET /dto/items/0/blue-shoe -> 400 {"error": "Bad Request", "message": ["id must not be less than 1"], "statusCode": 400}
+GET /dto/items/x/blue-shoe -> 400 {"error": "Bad Request", "message": ["id must not be less than 1", "id must be an integer number"], "statusCode": 400}
+GET /dto/items/7/Blue_Shoe -> 400 {"error": "Bad Request", "message": ["slug must match /^[a-z-]+$/ regular expression"], "statusCode": 400}
+GET /dto/items/12/caf%C3%A9 -> 400 {"error": "Bad Request", "message": ["slug must match /^[a-z-]+$/ regular expression"], "statusCode": 400}
+GET /dto/both/12/red?term=t&page=4 -> 200 {"id": "number:12", "page": "number:4", "rawId": "12", "rawTerm": "t", "slug": "string:red", "term": "string:t"}
+GET /dto/both/0/RED?page=4 -> 400 {"error": "Bad Request", "message": ["term should not be empty", "term must be a string"], "statusCode": 400}
+GET /dto/text?term=abc -> 200 {"lang": "absent", "term": "string:abc", "upper": "ABC"}
+GET /dto/text?term=abc&lang=pt -> 200 {"lang": "string:pt", "term": "string:abc", "upper": "ABC"}
+GET /dto/text?term=caf%C3%A9&lang=en -> 200 {"lang": "string:en", "term": "string:café", "upper": "CAFÉ"}
+GET /dto/text?term=a%20b%2Bc -> 200 {"lang": "absent", "term": "string:a b+c", "upper": "A B+C"}
+GET /dto/pages/doc/intro?term=x -> 200 {"kind": "string:doc", "path": "doc/intro", "slug": "string:intro", "term": "string:x"}
+GET /dto/pages/faq/a-b?term=y -> 200 {"kind": "string:faq", "path": "faq/a-b", "slug": "string:a-b", "term": "string:y"}
+GET /dto/pages/doc/caf%C3%A9?term=z -> 400 {"error": "Bad Request", "message": ["slug must match /^[a-z-]+$/ regular expression"], "statusCode": 400}
+GET /dto/text -> 400 {"error": "Bad Request", "message": ["term should not be empty", "term must be a string"], "statusCode": 400}
+GET /dto/text?term=abc&lang=es -> 400 {"error": "Bad Request", "message": ["lang must be one of the following values: pt, en"], "statusCode": 400}
+GET /dto/text?term= -> 400 {"error": "Bad Request", "message": ["term should not be empty"], "statusCode": 400}
+GET /dto/pages/blog/intro?term=x -> 400 {"error": "Bad Request", "message": ["kind must be one of the following values: doc, faq"], "statusCode": 400}
+GET /dto/pages/doc/Intro?term=x -> 400 {"error": "Bad Request", "message": ["slug must match /^[a-z-]+$/ regular expression"], "statusCode": 400}
+GET /dto/pages/doc/intro -> 400 {"error": "Bad Request", "message": ["term should not be empty", "term must be a string"], "statusCode": 400}
