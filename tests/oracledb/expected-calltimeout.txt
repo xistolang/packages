@@ -1,0 +1,12 @@
+callTimeout 0
+fast query under the limit: 42
+slow block: NJS-123: call timeout of 700 ms exceeded
+  not before the limit: true
+same connection afterwards: still usable
+inside a transaction: NJS-123: call timeout of 700 ms exceeded
+the insert before it is kept and committed: 1
+callTimeout 0: no limit, the 1 s block ends: true
+pool checkout 0: NJS-123: call timeout of 500 ms exceeded
+  then: 2
+pool checkout 1: NJS-123: call timeout of 500 ms exceeded
+  then: 4

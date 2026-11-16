@@ -45,6 +45,9 @@ typedef struct xs_ora_conn {
     size_t free_len, free_cap;
     bool fresh;             /* a new physical connection, not handed out yet (sessionCallback runs on it) */
     int64_t call_timeout;   /* the connection's callTimeout attribute (ms; kept across checkouts, as node-oracledb) */
+    int64_t deadline;       /* when the current round trip's callTimeout runs out (ms since the epoch; 0: none) */
+    bool brk_sent;          /* the round trip ran out: a break went to the server, the reset is still to do */
+    bool timed_out;         /* the round trip ran out (its error is NJS-123, as node-oracledb thin's) */
     struct xs_ora_conn *next;
 } xs_ora_conn;
 
@@ -109,13 +112,26 @@ static void xs_ora_kv(xs_ora_w *w, const char *k, const char *v, unsigned flags)
 }
 
 /* ---- packets ---- */
+static bool xs_ora_marker(xs_ora_conn *c, int data);
 static bool xs_ora_read_n(xs_ora_conn *c, uint8_t *p, size_t n) {
     size_t got = 0;
     while (got < n) {
         ssize_t r = read(c->fd, p + got, n - got);
         if (r > 0) { got += (size_t)r; continue; }
         if (r < 0 && errno == EINTR) continue;
-        if (r < 0 && errno == EAGAIN) { xs_wait_fd(c->fd, EVFILT_READ); continue; }
+        if (r < 0 && errno == EAGAIN) {
+            if (c->deadline == 0) { xs_wait_fd(c->fd, EVFILT_READ); continue; }
+            int64_t left = c->deadline - (int64_t)xs_date_now();
+            if (left > 0 && xs_wait_fd_ms(c->fd, EVFILT_READ, left)) continue;
+            if ((int64_t)xs_date_now() < c->deadline) continue;
+            /* callTimeout ran out (node-oracledb thin's call timer): break the call with an interrupt marker; the
+               server answers with a break, the client then resets the channel (xs_ora_more) and the call ends with
+               ORA-01013, reported as NJS-123 */
+            c->deadline = 0;
+            c->timed_out = c->brk_sent = true;
+            if (!xs_ora_marker(c, 3)) return false;
+            continue;
+        }
         c->broken = true;
         return false;
     }
@@ -141,6 +157,12 @@ static bool xs_ora_send_raw(xs_ora_conn *c, const uint8_t *p, size_t n) {
 }
 /* a request's payload in data packets of at most the SDU; the last one flags the end of the request (0x0800) */
 static bool xs_ora_send(xs_ora_conn *c, const xs_ora_w *w) {
+    /* a round trip starts: its callTimeout counts from here (node-oracledb thin: one timer per message; the request
+       for flushed OUT binds (19) is outside it there) */
+    if (!(w->len == 1 && w->p[0] == 19)) {
+        c->brk_sent = c->timed_out = false;
+        c->deadline = c->call_timeout > 0 ? (int64_t)xs_date_now() + c->call_timeout : 0;
+    }
     size_t max = c->sdu > 64 ? c->sdu - 10 : 8182, off = 0;
     uint8_t *pkt = malloc(max + 10);
     if (!pkt) xs_panic("out of memory");
@@ -175,6 +197,21 @@ static bool xs_ora_more(xs_ora_conn *c) {
         size_t n;
         int t = xs_ora_recv_packet(c, &p, &n);
         if (t < 0) return false;
+        if (c->brk_sent && !(t == 12 && n >= 11 && p[10] == 2)) {
+            /* after our break, whatever comes first (the server's break marker): reset the channel and wait for the
+               server's reset; what follows is the call's end (ORA-01013), as node-oracledb thin's resetMessage */
+            c->brk_sent = false;
+            free(p);
+            if (!xs_ora_marker(c, 2)) return false;
+            for (;;) {
+                t = xs_ora_recv_packet(c, &p, &n);
+                if (t < 0) return false;
+                bool reset = t == 12 && n >= 11 && p[10] == 2;
+                free(p);
+                if (reset) break;
+            }
+            continue;
+        }
         if (t == 12) { /* marker: the server broke the call (an error follows); answer with a reset, await its reset */
             int data = n >= 11 ? p[10] : 0;
             free(p);
@@ -1483,10 +1520,13 @@ static void xs_ora_read_result(xs_ora_conn *c, xs_ora_rs *r, xs_ora_status *st, 
     if (st->num == 1403) { st->num = 0; r->more = false; free(st->message); st->message = NULL; }
 }
 static XS_TLS int64_t xs_ora_last_offset; /* the offset of the last database error (error.offset) */
-static void xs_ora_throw_status(xs_ora_status *st) {
+static void xs_ora_throw_status(xs_ora_conn *c, xs_ora_status *st) {
     static XS_TLS char msg[1100];
     xs_ora_last_offset = st->pos;
-    snprintf(msg, sizeof msg, "%s", st->message ? st->message : "ORA-00000: unknown error");
+    if (c->timed_out) { /* (node-oracledb thin: the call's error, once its timer ran out, is the timeout) */
+        xs_ora_last_offset = 0;
+        snprintf(msg, sizeof msg, "NJS-123: call timeout of %lld ms exceeded", (long long)c->call_timeout);
+    } else snprintf(msg, sizeof msg, "%s", st->message ? st->message : "ORA-00000: unknown error");
     free(st->message);
     st->message = NULL;
     xs_throw(xs_Error_from(msg));
@@ -1635,7 +1675,7 @@ static void xs_ora_lob_op(xs_ora_conn *c, unsigned op, uint8_t *loc, size_t locl
             else if (send_amount) xs_ora_rub(c);
         } else if (!xs_ora_common(c, t, &st)) xs_ora_fail("oracledb: unexpected message %u in a LOB operation", t);
     }
-    if (st.num != 0) { if (data) { free(data->data); data->data = NULL; data->len = 0; } xs_ora_throw_status(&st); }
+    if (st.num != 0) { if (data) { free(data->data); data->data = NULL; data->len = 0; } xs_ora_throw_status(c, &st); }
     free(st.message);
 }
 /* UTF-8 to UTF-16BE (the text of a CLOB in a variable-width character set) */
@@ -1745,7 +1785,7 @@ static xs_str *xs_ora_execute(xs_ora_conn *c, xs_str *sql, int nb, xs_ora_val *v
         xs_ora_read_result(c, &r, &st, false);
     }
     int cursor = st.cursor;
-    if (st.num != 0) { xs_ora_free_in_lobs(c, vals, r.binds ? nb : 0); xs_ora_close_later(c, cursor); xs_ora_rs_free(&r); xs_ora_throw_status(&st); }
+    if (st.num != 0) { xs_ora_free_in_lobs(c, vals, r.binds ? nb : 0); xs_ora_close_later(c, cursor); xs_ora_rs_free(&r); xs_ora_throw_status(c, &st); }
     int64_t affected = st.row_count;
     if (kind == XS_ORA_QUERY) {
         bool lobs = false;
@@ -1755,7 +1795,7 @@ static xs_str *xs_ora_execute(xs_ora_conn *c, xs_str *sql, int nb, xs_ora_val *v
             xs_ora_send_execute(c, sql->data, (size_t)sql->len, kind, cursor, true, &r, 0, NULL, false);
             xs_ora_start_response(c);
             xs_ora_read_result(c, &r, &st, true);
-            if (st.num != 0) { xs_ora_close_later(c, cursor); xs_ora_rs_free(&r); xs_ora_throw_status(&st); }
+            if (st.num != 0) { xs_ora_close_later(c, cursor); xs_ora_rs_free(&r); xs_ora_throw_status(c, &st); }
         }
         while (r.more && (r.maxrows == 0 || r.nrows < r.maxrows)) {
             xs_ora_w w = {0};
@@ -1768,7 +1808,7 @@ static xs_str *xs_ora_execute(xs_ora_conn *c, xs_str *sql, int nb, xs_ora_val *v
             st.end = false;
             xs_ora_start_response(c);
             xs_ora_read_result(c, &r, &st, true);
-            if (st.num != 0) { xs_ora_close_later(c, cursor); xs_ora_rs_free(&r); xs_ora_throw_status(&st); }
+            if (st.num != 0) { xs_ora_close_later(c, cursor); xs_ora_rs_free(&r); xs_ora_throw_status(c, &st); }
         }
     }
     xs_ora_close_later(c, cursor);
@@ -1910,7 +1950,7 @@ static void xs_ora_simple(xn_oracledb_NativePool *p, int64_t h, unsigned code) {
     xs_ora_status st = {0};
     xs_ora_start_response(c);
     while (!st.end) { unsigned t = xs_ora_r8(c); if (!xs_ora_common(c, t, &st)) xs_ora_fail("oracledb: unexpected message %u", t); }
-    if (st.num != 0) xs_ora_throw_status(&st);
+    if (st.num != 0) xs_ora_throw_status(c, &st);
 }
 XS_NOINLINE void xn_oracledb_NativePool_commit(xn_oracledb_NativePool *p, int64_t h) { xs_ora_simple(p, h, 14); }
 XS_NOINLINE void xn_oracledb_NativePool_rollback(xn_oracledb_NativePool *p, int64_t h) { xs_ora_simple(p, h, 15); }

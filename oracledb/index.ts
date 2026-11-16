@@ -401,7 +401,6 @@ export class Connection {
       return this.executeNamedRaw(sql, binds, options); // binds by name, as node-oracledb takes them
     }
     this.check();
-    this.checkCallTimeout();
     const b = bindsByPosition(binds);
     return enabled() ? this.traced(sql, b, options) : this.run(sql, b, options);
   }
@@ -429,7 +428,6 @@ export class Connection {
   /** executeNamed's result as the driver gives it (JSON). */
   async executeNamedRaw(sql: string, binds: Record<string, unknown>, options: ExecuteOptions = {}): Promise<object> {
     this.check();
-    this.checkCallTimeout();
     const b = bindsByName(binds);
     return enabled() ? this.traced(sql, b, options) : this.run(sql, b, options);
   }
@@ -489,8 +487,8 @@ export class Connection {
 
   /**
    * The most milliseconds a round trip may take (0, the default: no limit); it stays with the physical connection
-   * across checkouts. Compatibility: a limit above 0 is not enforced yet, so a statement on such a connection
-   * fails (never runs past a limit silently).
+   * across checkouts. A round trip that runs past it is broken off (the session stays usable) and fails with
+   * "NJS-123: call timeout of N ms exceeded", as node-oracledb thin.
    */
   get callTimeout(): number {
     return this.native.callTimeout(this.handle);
@@ -498,11 +496,6 @@ export class Connection {
 
   set callTimeout(ms: number) {
     this.native.setCallTimeout(this.handle, Math.trunc(ms));
-  }
-
-  private checkCallTimeout(): void {
-    const ms = this.native.callTimeout(this.handle);
-    if (ms > 0) throw new Error(`NJS-123: callTimeout of ${ms} ms is not supported by xisto's oracledb yet: set it to 0`);
   }
 
   /** (the pool's) true once: the first checkout of a new physical connection. */

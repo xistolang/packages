@@ -2,6 +2,7 @@
 # packages/oracledb against a live Oracle Database: XISTO_ORACLE_URL=oracle://user:password@host:port/service
 # (docker: gvenzl/oracle-free on 127.0.0.1:1521, service FREEPDB1). The test creates and drops table XISTO_ITEMS.
 # session.ts: sessionCallback (expected-session.txt from the same file on node-oracledb 6 thin).
+# calltimeout.ts: callTimeout (expected-calltimeout.txt from the same file on node-oracledb 6.10 thin).
 # outbinds.ts: PL/SQL OUT and IN OUT binds (expected-outbinds.txt from tests/oracledb/outbinds.js on node-oracledb 6.10 thin).
 # Without the variable the test is skipped, not failed. expected.txt is what node-oracledb 6 thin prints for the
 # same operations; the client runs in America/Sao_Paulo since DATE and TIMESTAMP are read in the local time zone.
@@ -58,4 +59,11 @@ if ! XISTO_RC_STATS=1 "$OUT/session" > "$OUT/session.txt" 2> "$OUT/session-stats
 fi
 if ! grep -q ' 0 still alive' "$OUT/session-stats.txt"; then echo "FAIL: leak (sessionCallback): $(cat "$OUT/session-stats.txt")"; exit 1; fi
 echo "ok: pool sessionCallback once per physical connection, its callTimeout kept, its error fails getConnection"
+cp calltimeout.ts "$OUT/calltimeout.ts"
+XISTO_NODE_COMPAT=1 $X build --no-warnings -o "$OUT/calltimeout" "$OUT/calltimeout.ts" || exit 1
+if ! XISTO_RC_STATS=1 perl -e 'alarm 60; exec @ARGV' "$OUT/calltimeout" > "$OUT/calltimeout.txt" 2> "$OUT/calltimeout-stats.txt" || ! cmp -s expected-calltimeout.txt "$OUT/calltimeout.txt"; then
+    echo "FAIL: callTimeout"; diff expected-calltimeout.txt "$OUT/calltimeout.txt"; exit 1
+fi
+if ! grep -q ' 0 still alive' "$OUT/calltimeout-stats.txt"; then echo "FAIL: leak (callTimeout): $(cat "$OUT/calltimeout-stats.txt")"; exit 1; fi
+echo "ok: callTimeout breaks off a slow round trip with NJS-123 and the session goes on (standalone and pooled)"
 echo "ok: oracledb client (fast and classic login, types, DML, binds, transactions, ORA errors, 250 rows, CLOB/BLOB, 1500 statements, pool, 0 alive; OUT/IN OUT binds by name and position, NUMBER/STRING/DATE/BOOLEAN/CLOB/BLOB, NULL, 32767 bytes, CLOB/BLOB temporary LOBs)"
