@@ -1,0 +1,31 @@
+GET /api/health 200 OK [content-type=application/json;charset=utf-8; content-length=15] '{"status":"ok"}'
+GET /api/items 200 OK [content-type=application/json;charset=utf-8; content-length=25; x-ratelimit-limit=3; x-ratelimit-remaining=2; x-ratelimit-reset=60] '[{"id":"1","name":"pen"}]'
+GET /api/items 200 OK [content-type=application/json;charset=utf-8; content-length=25; x-ratelimit-limit=3; x-ratelimit-remaining=1; x-ratelimit-reset=60] '[{"id":"1","name":"pen"}]'
+GET /api/items 200 OK [content-type=application/json;charset=utf-8; content-length=25; x-ratelimit-limit=3; x-ratelimit-remaining=0; x-ratelimit-reset=60] '[{"id":"1","name":"pen"}]'
+GET /api/items 429 Too Many Requests [content-type=application/json;charset=utf-8; content-length=104; retry-after=60] '{"success":false,"statusCode":429,"message":"ThrottlerException: Too Many Requests","path":"/api/items"}'
+GET /api/items/1?x=1&y=%20z 200 OK [content-type=application/json;charset=utf-8; content-length=23; x-ratelimit-limit=3; x-ratelimit-remaining=2; x-ratelimit-reset=60] '{"id":"1","name":"pen"}'
+GET /api/items/2 404 Not Found [content-type=application/json;charset=utf-8; content-length=85; x-ratelimit-limit=3; x-ratelimit-remaining=1; x-ratelimit-reset=60] '{"success":false,"statusCode":404,"message":"Item 2 not found","path":"/api/items/2"}'
+GET /api/items/boom 500 Internal Server Error [content-type=application/json;charset=utf-8; content-length=93; x-ratelimit-limit=3; x-ratelimit-remaining=2; x-ratelimit-reset=60] '{"success":false,"statusCode":500,"message":"Internal server error","path":"/api/items/boom"}'
+GET /api/items/plain 409 Conflict [content-type=application/json;charset=utf-8; content-length=92; x-ratelimit-limit=3; x-ratelimit-remaining=2; x-ratelimit-reset=60] '{"success":false,"statusCode":409,"message":"a plain text answer","path":"/api/items/plain"}'
+GET /api/items/invalid 400 Bad Request [content-type=application/json;charset=utf-8; content-length=118; x-ratelimit-limit=3; x-ratelimit-remaining=2; x-ratelimit-reset=60] '{"success":false,"statusCode":400,"message":"name must be a string; qty must be a number","path":"/api/items/invalid"}'
+GET /api/nope 404 Not Found [content-type=application/json;charset=utf-8; content-length=86] '{"success":false,"statusCode":404,"message":"Cannot GET /api/nope","path":"/api/nope"}'
+GET /api/nope?x=1 404 Not Found [content-type=application/json;charset=utf-8; content-length=94] '{"success":false,"statusCode":404,"message":"Cannot GET /api/nope?x=1","path":"/api/nope?x=1"}'
+POST /api/items 404 Not Found [content-type=application/json;charset=utf-8; content-length=89] '{"success":false,"statusCode":404,"message":"Cannot POST /api/items","path":"/api/items"}'
+DELETE /api/items/1 404 Not Found [content-type=application/json;charset=utf-8; content-length=95] '{"success":false,"statusCode":404,"message":"Cannot DELETE /api/items/1","path":"/api/items/1"}'
+GET /nope 404 Not Found [content-type=application/json;charset=utf-8; content-length=78] '{"success":false,"statusCode":404,"message":"Cannot GET /nope","path":"/nope"}'
+HEAD /api/health 200 OK [content-type=application/json;charset=utf-8; content-length=15] ''
+HEAD /api/items/1 200 OK [content-type=application/json;charset=utf-8; content-length=23; x-ratelimit-limit=3; x-ratelimit-remaining=0; x-ratelimit-reset=60] ''
+GET /api/health/ 200 OK [content-type=application/json;charset=utf-8; content-length=15] '{"status":"ok"}'
+GET /api/items/1/ 429 Too Many Requests [content-type=application/json;charset=utf-8; content-length=107; retry-after=60] '{"success":false,"statusCode":429,"message":"ThrottlerException: Too Many Requests","path":"/api/items/1/"}'
+log LOG [HTTP] GET /api/health 200
+log LOG [HTTP] GET /api/items 200
+log LOG [HTTP] GET /api/items 200
+log LOG [HTTP] GET /api/items 200
+log LOG [HTTP] GET /api/items/1?x=1&y=%20z 200
+log WARN [HTTP] GET /api/items/2 failed: Item 2 not found
+log WARN [HTTP] GET /api/items/boom failed: the store is down
+log WARN [HTTP] GET /api/items/plain failed: a plain text answer
+log WARN [HTTP] GET /api/items/invalid failed: Bad Request Exception
+log LOG [HTTP] HEAD /api/health 200
+log LOG [HTTP] HEAD /api/items/1 200
+log LOG [HTTP] GET /api/health/ 200

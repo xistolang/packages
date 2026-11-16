@@ -59,6 +59,7 @@ apm-instr tests/apm-instr/run.sh ^ok.apm
 nest-features examples/nest-features/test/run.sh ^ok:.nest-features
 nest-versions examples/nest-versions/test/run.sh ^ok:.nest-versions
 nest-auth examples/nest-auth/test/run.sh ^ok:.nest-auth
+nest-errors examples/nest-errors/test/run.sh ^ok:.nest-errors
 apm-dd tests/apm/dd/run.sh ^ok:
 apm-dd-redis tests/apm/dd-redis/run.sh
 apm-dd-logs tests/apm/dd-logs/run.sh ^ok:.dd-trace.log

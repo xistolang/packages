@@ -654,9 +654,11 @@ function notFound(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpRe
   const request = new Request();
   request.setSource(req);
   request.method = req.method;
-  request.url = req.path;
+  // (req.url is the path and its query string, as Express's: the same as originalUrl when no router is mounted)
+  const search = req.search();
+  request.url = search.length > 0 ? req.path + search : req.path;
   request.path = req.path;
-  request.originalUrl = req.path + req.search();
+  request.originalUrl = request.url;
   request.body = parsedBody(req.body);
   const response = new Response();
   const ctx = new ExecutionContext(request, response);
@@ -745,9 +747,11 @@ function handle(r: Route, req: HttpRequest, fail: RouteFailure | null): HttpResp
   const request = new Request();
   request.setSource(req);
   request.method = req.method;
-  request.url = req.path;
+  // (req.url is the path and its query string, as Express's: the same as originalUrl when no router is mounted)
+  const search = req.search();
+  request.url = search.length > 0 ? req.path + search : req.path;
   request.path = req.path;
-  request.originalUrl = req.path + req.search();
+  request.originalUrl = request.url;
   request.body = parsedBody(req.body);
   request.rawBody = Buffer.from(req.body);
   fillParams(request, r.path, req);

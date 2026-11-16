@@ -137,8 +137,8 @@ export class Response {
   private hooksRan: boolean = false;
 
   /** Sets the status code. */
-  status(code: int): Response {
-    this.statusCode = code;
+  status(code: number): Response {
+    this.statusCode = Math.trunc(code); // (a number, as Express takes it: let status = 500 in a filter is one)
     return this;
   }
 

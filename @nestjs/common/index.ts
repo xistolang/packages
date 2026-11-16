@@ -95,6 +95,18 @@ export class HttpException extends Error {
     this.response = response;
     this.status = status;
   }
+  /**
+   * What a built-in exception sets after super(): its class name, which @Catch compares, and Nest's message when the body
+   * has none of its own (a list of messages: "Bad Request Exception", the name's words).
+   */
+  protected named(name: string): void {
+    this.exceptionName = name;
+    this.name = name;
+    if (this.message === "Http Exception" && HttpException.ownMessage(this.response) === null) {
+      const words = name.match(/[A-Z][a-z]+|[0-9]+/g);
+      this.message = words !== null ? words.join(" ") : "Error";
+    }
+  }
   getStatus(): int {
     return this.status;
   }
@@ -103,12 +115,16 @@ export class HttpException extends Error {
   }
   /** The message Nest gives the error: the body's message, or the description. */
   static messageOf(response: object): string {
+    return HttpException.ownMessage(response) ?? "Http Exception"; // (a list of messages: Nest names the class)
+  }
+  /** The body's text, or its message when that is a text; null otherwise. */
+  static ownMessage(response: object): string | null {
     const text = JSON.stringify(response);
     if (text.startsWith("\"")) {
       return JSON.parse(text) as string;
     }
     const m = bodyField(text, "message");
-    return m.startsWith("\"") ? (JSON.parse(m) as string) : "Http Exception"; // (a list of messages: Nest names the class)
+    return m.startsWith("\"") ? (JSON.parse(m) as string) : null;
   }
 
   // Nest's body for the built-in exceptions: { message, statusCode } without a message, { message, error, statusCode }
@@ -139,144 +155,126 @@ interface ErrorBody {
 export class BadRequestException extends HttpException {
   constructor(message: unknown = "", description: string = "Bad Request") {
     super(HttpException.createBody(message, description, HttpStatus.BAD_REQUEST), HttpStatus.BAD_REQUEST);
-    this.exceptionName = "BadRequestException";
-    this.name = "BadRequestException";
+    this.named("BadRequestException");
   }
 }
 @Injectable()
 export class UnauthorizedException extends HttpException {
   constructor(message: unknown = "", description: string = "Unauthorized") {
     super(HttpException.createBody(message, description, HttpStatus.UNAUTHORIZED), HttpStatus.UNAUTHORIZED);
-    this.exceptionName = "UnauthorizedException";
-    this.name = "UnauthorizedException";
+    this.named("UnauthorizedException");
   }
 }
 @Injectable()
 export class ForbiddenException extends HttpException {
   constructor(message: unknown = "", description: string = "Forbidden") {
     super(HttpException.createBody(message, description, HttpStatus.FORBIDDEN), HttpStatus.FORBIDDEN);
-    this.exceptionName = "ForbiddenException";
-    this.name = "ForbiddenException";
+    this.named("ForbiddenException");
   }
 }
 @Injectable()
 export class NotFoundException extends HttpException {
   constructor(message: unknown = "", description: string = "Not Found") {
     super(HttpException.createBody(message, description, HttpStatus.NOT_FOUND), HttpStatus.NOT_FOUND);
-    this.exceptionName = "NotFoundException";
-    this.name = "NotFoundException";
+    this.named("NotFoundException");
   }
 }
 @Injectable()
 export class MethodNotAllowedException extends HttpException {
   constructor(message: unknown = "", description: string = "Method Not Allowed") {
     super(HttpException.createBody(message, description, HttpStatus.METHOD_NOT_ALLOWED), HttpStatus.METHOD_NOT_ALLOWED);
-    this.exceptionName = "MethodNotAllowedException";
-    this.name = "MethodNotAllowedException";
+    this.named("MethodNotAllowedException");
   }
 }
 @Injectable()
 export class NotAcceptableException extends HttpException {
   constructor(message: unknown = "", description: string = "Not Acceptable") {
     super(HttpException.createBody(message, description, HttpStatus.NOT_ACCEPTABLE), HttpStatus.NOT_ACCEPTABLE);
-    this.exceptionName = "NotAcceptableException";
-    this.name = "NotAcceptableException";
+    this.named("NotAcceptableException");
   }
 }
 @Injectable()
 export class RequestTimeoutException extends HttpException {
   constructor(message: unknown = "", description: string = "Request Timeout") {
     super(HttpException.createBody(message, description, HttpStatus.REQUEST_TIMEOUT), HttpStatus.REQUEST_TIMEOUT);
-    this.exceptionName = "RequestTimeoutException";
-    this.name = "RequestTimeoutException";
+    this.named("RequestTimeoutException");
   }
 }
 @Injectable()
 export class ConflictException extends HttpException {
   constructor(message: unknown = "", description: string = "Conflict") {
     super(HttpException.createBody(message, description, HttpStatus.CONFLICT), HttpStatus.CONFLICT);
-    this.exceptionName = "ConflictException";
-    this.name = "ConflictException";
+    this.named("ConflictException");
   }
 }
 @Injectable()
 export class GoneException extends HttpException {
   constructor(message: unknown = "", description: string = "Gone") {
     super(HttpException.createBody(message, description, HttpStatus.GONE), HttpStatus.GONE);
-    this.exceptionName = "GoneException";
-    this.name = "GoneException";
+    this.named("GoneException");
   }
 }
 @Injectable()
 export class PreconditionFailedException extends HttpException {
   constructor(message: unknown = "", description: string = "Precondition Failed") {
     super(HttpException.createBody(message, description, HttpStatus.PRECONDITION_FAILED), HttpStatus.PRECONDITION_FAILED);
-    this.exceptionName = "PreconditionFailedException";
-    this.name = "PreconditionFailedException";
+    this.named("PreconditionFailedException");
   }
 }
 @Injectable()
 export class PayloadTooLargeException extends HttpException {
   constructor(message: unknown = "", description: string = "Payload Too Large") {
     super(HttpException.createBody(message, description, HttpStatus.PAYLOAD_TOO_LARGE), HttpStatus.PAYLOAD_TOO_LARGE);
-    this.exceptionName = "PayloadTooLargeException";
-    this.name = "PayloadTooLargeException";
+    this.named("PayloadTooLargeException");
   }
 }
 @Injectable()
 export class UnsupportedMediaTypeException extends HttpException {
   constructor(message: unknown = "", description: string = "Unsupported Media Type") {
     super(HttpException.createBody(message, description, HttpStatus.UNSUPPORTED_MEDIA_TYPE), HttpStatus.UNSUPPORTED_MEDIA_TYPE);
-    this.exceptionName = "UnsupportedMediaTypeException";
-    this.name = "UnsupportedMediaTypeException";
+    this.named("UnsupportedMediaTypeException");
   }
 }
 @Injectable()
 export class UnprocessableEntityException extends HttpException {
   constructor(message: unknown = "", description: string = "Unprocessable Entity") {
     super(HttpException.createBody(message, description, HttpStatus.UNPROCESSABLE_ENTITY), HttpStatus.UNPROCESSABLE_ENTITY);
-    this.exceptionName = "UnprocessableEntityException";
-    this.name = "UnprocessableEntityException";
+    this.named("UnprocessableEntityException");
   }
 }
 @Injectable()
 export class InternalServerErrorException extends HttpException {
   constructor(message: unknown = "", description: string = "Internal Server Error") {
     super(HttpException.createBody(message, description, HttpStatus.INTERNAL_SERVER_ERROR), HttpStatus.INTERNAL_SERVER_ERROR);
-    this.exceptionName = "InternalServerErrorException";
-    this.name = "InternalServerErrorException";
+    this.named("InternalServerErrorException");
   }
 }
 @Injectable()
 export class NotImplementedException extends HttpException {
   constructor(message: unknown = "", description: string = "Not Implemented") {
     super(HttpException.createBody(message, description, HttpStatus.NOT_IMPLEMENTED), HttpStatus.NOT_IMPLEMENTED);
-    this.exceptionName = "NotImplementedException";
-    this.name = "NotImplementedException";
+    this.named("NotImplementedException");
   }
 }
 @Injectable()
 export class BadGatewayException extends HttpException {
   constructor(message: unknown = "", description: string = "Bad Gateway") {
     super(HttpException.createBody(message, description, HttpStatus.BAD_GATEWAY), HttpStatus.BAD_GATEWAY);
-    this.exceptionName = "BadGatewayException";
-    this.name = "BadGatewayException";
+    this.named("BadGatewayException");
   }
 }
 @Injectable()
 export class ServiceUnavailableException extends HttpException {
   constructor(message: unknown = "", description: string = "Service Unavailable") {
     super(HttpException.createBody(message, description, HttpStatus.SERVICE_UNAVAILABLE), HttpStatus.SERVICE_UNAVAILABLE);
-    this.exceptionName = "ServiceUnavailableException";
-    this.name = "ServiceUnavailableException";
+    this.named("ServiceUnavailableException");
   }
 }
 @Injectable()
 export class GatewayTimeoutException extends HttpException {
   constructor(message: unknown = "", description: string = "Gateway Timeout") {
     super(HttpException.createBody(message, description, HttpStatus.GATEWAY_TIMEOUT), HttpStatus.GATEWAY_TIMEOUT);
-    this.exceptionName = "GatewayTimeoutException";
-    this.name = "GatewayTimeoutException";
+    this.named("GatewayTimeoutException");
   }
 }
 
