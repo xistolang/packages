@@ -1,0 +1,14 @@
+off sync: 42
+off text: text
+off void ran: true
+off async: 5
+off helper number: 10
+off helper void: inside after
+off helper rejected: failed job
+on sync: 42
+on text: text
+on void ran: true
+on async: 5
+on helper number: 10
+on helper void: inside after
+on helper rejected: failed job

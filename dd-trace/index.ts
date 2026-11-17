@@ -400,16 +400,18 @@ function traceOptions(name: string, options: TraceOptions): ApmSpanOptions {
   return o;
 }
 
-/** Runs fn in a new active span that ends when fn returns or throws, or when the promise it returns settles. */
-export function trace(name: string, options: TraceOptions, fn: (span: Span) => any): any {
+/** Runs fn in a new active span that ends when fn returns or throws, or when the promise it returns settles; fn's
+ * value is given back (a promise as it is), as dd-trace's tracer.trace<T> does. */
+export function trace<T>(name: string, options: TraceOptions, fn: (span: Span) => T): T {
   const core = newSpan(name, traceOptions(name, options));
   if (core === null) return fn(new Span(null));
   const span = wrapSpan(core) as Span;
   const tags = options.tags;
   if (tags !== null) span.addTags(tags);
   try {
-    const v: any = runIn(core, (): any => fn(span));
-    return finishWith(core, v);
+    const v = runIn(core, (): T => fn(span));
+    finishWith(core, v);
+    return v;
   } catch (err) {
     core.setError(err as Error);
     core.finish();
@@ -472,7 +474,7 @@ export class Tracer {
   startSpan(name: string, options: StartSpanOptions | null = null): Span {
     return startSpan(name, options);
   }
-  trace(name: string, options: TraceOptions, fn: (span: Span) => any): any {
+  trace<T>(name: string, options: TraceOptions, fn: (span: Span) => T): T {
     return trace(name, options, fn);
   }
   wrap(name: string, fn: (...args: any[]) => any): (...args: any[]) => any {
